@@ -1,8 +1,7 @@
-#!/usr/bin/python
 import re
 from collections import OrderedDict
 
-from Qt import QtCore, QtWidgets, QtGui
+from PySide6 import QtCore, QtWidgets, QtGui
 
 from NodeGraphQt.constants import ViewerEnum, ViewerNavEnum
 
@@ -15,9 +14,9 @@ class TabSearchCompleter(QtWidgets.QCompleter):
 
     def __init__(self, nodes=None, parent=None):
         super(TabSearchCompleter, self).__init__(nodes, parent)
-        self.setCompletionMode(self.PopupCompletion)
-        self.setCaseSensitivity(QtCore.Qt.CaseInsensitive)
-        self._local_completion_prefix = ''
+        self.setCompletionMode(self.CompletionMode.PopupCompletion)
+        self.setCaseSensitivity(QtCore.Qt.CaseSensitivity.CaseInsensitive)
+        self._local_completion_prefix = ""
         self._using_orig_model = False
         self._source_model = None
         self._filter_model = None
@@ -35,11 +34,16 @@ class TabSearchCompleter(QtWidgets.QCompleter):
     def updateModel(self):
         if not self._using_orig_model:
             self._filter_model.setSourceModel(self._source_model)
-
-        pattern = QtCore.QRegExp(self._local_completion_prefix,
-                                 QtCore.Qt.CaseInsensitive,
-                                 QtCore.QRegExp.FixedString)
-        self._filter_model.setFilterRegExp(pattern)
+        # # https://doc.qt.io/qtforpython-6/overviews/qtcore-changes-qt6.html#the-qregularexpression-class
+        # pattern = QtCore.QRegExp(self._local_completion_prefix,
+        #                          QtCore.Qt.CaseSensitivity.CaseInsensitive,
+        #                          QtCore.QRegExp.FixedString)
+        # self._filter_model.setFilterRegExp(pattern)
+        # TODO: review these changes
+        self._filter_model.setFilterCaseSensitivity(
+            QtCore.Qt.CaseSensitivity.CaseInsensitive
+        )
+        self._filter_model.setFilterFixedString(self._local_completion_prefix)
 
     def setModel(self, model):
         self._source_model = model
@@ -55,40 +59,40 @@ class TabSearchLineEditWidget(QtWidgets.QLineEdit):
 
     def __init__(self, parent=None):
         super(TabSearchLineEditWidget, self).__init__(parent)
-        self.setAttribute(QtCore.Qt.WA_MacShowFocusRect, 0)
+        self.setAttribute(QtCore.Qt.WidgetAttribute.WA_MacShowFocusRect, 0)
         self.setMinimumSize(200, 22)
         # text_color = self.palette().text().color().getRgb()
-        text_color = tuple(map(lambda i, j: i - j, (255, 255, 255),
-                               ViewerEnum.BACKGROUND_COLOR.value))
+        text_color = tuple(
+            map(lambda i, j: i - j, (255, 255, 255), ViewerEnum.BACKGROUND_COLOR.value)
+        )
         selected_color = self.palette().highlight().color().getRgb()
         style_dict = {
-            'QLineEdit': {
-                'color': 'rgb({0},{1},{2})'.format(*text_color),
-                'border': '1px solid rgb({0},{1},{2})'.format(
-                    *selected_color
-                ),
-                'border-radius': '3px',
-                'padding': '2px 4px',
-                'margin': '2px 4px 8px 4px',
-                'background': 'rgb({0},{1},{2})'.format(
+            "QLineEdit": {
+                "color": "rgb({0},{1},{2})".format(*text_color),
+                "border": "1px solid rgb({0},{1},{2})".format(*selected_color),
+                "border-radius": "3px",
+                "padding": "2px 4px",
+                "margin": "2px 4px 8px 4px",
+                "background": "rgb({0},{1},{2})".format(
                     *ViewerNavEnum.BACKGROUND_COLOR.value
                 ),
-                'selection-background-color': 'rgba({0},{1},{2},200)'
-                                              .format(*selected_color),
+                "selection-background-color": "rgba({0},{1},{2},200)".format(
+                    *selected_color
+                ),
             }
         }
-        stylesheet = ''
+        stylesheet = ""
         for css_class, css in style_dict.items():
-            style = '{} {{\n'.format(css_class)
+            style = "{} {{\n".format(css_class)
             for elm_name, elm_val in css.items():
-                style += '  {}:{};\n'.format(elm_name, elm_val)
-            style += '}\n'
+                style += "  {}:{};\n".format(elm_name, elm_val)
+            style += "}\n"
             stylesheet += style
         self.setStyleSheet(stylesheet)
 
     def keyPressEvent(self, event):
         super(TabSearchLineEditWidget, self).keyPressEvent(event)
-        if event.key() == QtCore.Qt.Key_Tab:
+        if event.key() == QtCore.Qt.Key.Key_Tab:
             self.tab_pressed.emit()
 
 
@@ -111,39 +115,39 @@ class TabSearchMenuWidget(QtWidgets.QMenu):
         self.addAction(search_widget)
 
         # text_color = self.palette().text().color().getRgb()
-        text_color = tuple(map(lambda i, j: i - j, (255, 255, 255),
-                               ViewerEnum.BACKGROUND_COLOR.value))
+        text_color = tuple(
+            map(lambda i, j: i - j, (255, 255, 255), ViewerEnum.BACKGROUND_COLOR.value)
+        )
         selected_color = self.palette().highlight().color().getRgb()
         style_dict = {
-            'QMenu': {
-                'color': 'rgb({0},{1},{2})'.format(*text_color),
-                'background-color': 'rgb({0},{1},{2})'.format(
+            "QMenu": {
+                "color": "rgb({0},{1},{2})".format(*text_color),
+                "background-color": "rgb({0},{1},{2})".format(
                     *ViewerEnum.BACKGROUND_COLOR.value
                 ),
-                'border': '1px solid rgba({0},{1},{2},30)'.format(*text_color),
-                'border-radius': '3px',
+                "border": "1px solid rgba({0},{1},{2},30)".format(*text_color),
+                "border-radius": "3px",
             },
-            'QMenu::item': {
-                'padding': '5px 18px 2px',
-                'background-color': 'transparent',
+            "QMenu::item": {
+                "padding": "5px 18px 2px",
+                "background-color": "transparent",
             },
-            'QMenu::item:selected': {
-                'color': 'rgb({0},{1},{2})'.format(*text_color),
-                'background-color': 'rgba({0},{1},{2},200)'
-                                    .format(*selected_color),
+            "QMenu::item:selected": {
+                "color": "rgb({0},{1},{2})".format(*text_color),
+                "background-color": "rgba({0},{1},{2},200)".format(*selected_color),
             },
-            'QMenu::separator': {
-                'height': '1px',
-                'background': 'rgba({0},{1},{2}, 50)'.format(*text_color),
-                'margin': '4px 8px',
-            }
+            "QMenu::separator": {
+                "height": "1px",
+                "background": "rgba({0},{1},{2}, 50)".format(*text_color),
+                "margin": "4px 8px",
+            },
         }
-        self._menu_stylesheet = ''
+        self._menu_stylesheet = ""
         for css_class, css in style_dict.items():
-            style = '{} {{\n'.format(css_class)
+            style = "{} {{\n".format(css_class)
             for elm_name, elm_val in css.items():
-                style += '  {}:{};\n'.format(elm_name, elm_val)
-            style += '}\n'
+                style += "  {}:{};\n".format(elm_name, elm_val)
+            style += "}\n"
             self._menu_stylesheet += style
         self.setStyleSheet(self._menu_stylesheet)
 
@@ -158,7 +162,7 @@ class TabSearchMenuWidget(QtWidgets.QMenu):
         self._wire_signals()
 
     def __repr__(self):
-        return '<{} at {}>'.format(self.__class__.__name__, hex(id(self)))
+        return "<{} at {}>".format(self.__class__.__name__, hex(id(self)))
 
     def keyPressEvent(self, event):
         super(TabSearchMenuWidget, self).keyPressEvent(event)
@@ -167,7 +171,7 @@ class TabSearchMenuWidget(QtWidgets.QMenu):
     @staticmethod
     def _fuzzy_finder(key, collection):
         suggestions = []
-        pattern = '.*?'.join(key.lower())
+        pattern = ".*?".join(key.lower())
         regex = re.compile(pattern)
         for item in collection:
             match = regex.search(item.lower())
@@ -244,10 +248,10 @@ class TabSearchMenuWidget(QtWidgets.QMenu):
 
         max_depth = 0
         for node_type in node_types:
-            trees = '.'.join(node_type.split('.')[:-1]).split('::')
+            trees = ".".join(node_type.split(".")[:-1]).split("::")
             for depth, menu_name in enumerate(trees):
                 new_menu = None
-                menu_path = '::'.join(trees[:depth + 1])
+                menu_path = "::".join(trees[: depth + 1])
                 if depth in menu_tree.keys():
                     if menu_name not in menu_tree[depth].keys():
                         new_menu = QtWidgets.QMenu(menu_name)
@@ -259,11 +263,11 @@ class TabSearchMenuWidget(QtWidgets.QMenu):
                     new_menu.setStyleSheet(self._menu_stylesheet)
                     menu_tree[depth] = {menu_path: new_menu}
                 if depth > 0 and new_menu:
-                    new_menu.parentPath = '::'.join(trees[:depth])
+                    new_menu.parentPath = "::".join(trees[:depth])
 
                 max_depth = max(max_depth, depth)
 
-        for i in range(max_depth+1):
+        for i in range(max_depth + 1):
             menus = menu_tree[i]
             for menu_path, menu in menus.items():
                 self._menus[menu_path] = menu
@@ -280,7 +284,7 @@ class TabSearchMenuWidget(QtWidgets.QMenu):
             self._actions[name] = action
 
             menu_name = self._node_dict[name]
-            menu_path = '.'.join(menu_name.split('.')[:-1])
+            menu_path = ".".join(menu_name.split(".")[:-1])
 
             if menu_path in self._menus.keys():
                 self._menus[menu_path].addAction(action)
@@ -301,7 +305,7 @@ class TabSearchMenuWidget(QtWidgets.QMenu):
                     self._node_dict[name] = node_types[0]
                     continue
                 for node_id in node_types:
-                    self._node_dict['{} ({})'.format(name, node_id)] = node_id
+                    self._node_dict["{} ({})".format(name, node_id)] = node_id
             self.build_menu_tree()
             self.rebuild = False
 

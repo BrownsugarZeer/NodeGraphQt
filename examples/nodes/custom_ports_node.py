@@ -1,5 +1,4 @@
-#!/usr/bin/python
-from Qt import QtCore, QtGui
+from PySide6 import QtCore, QtGui
 
 from NodeGraphQt import BaseNode
 
@@ -35,17 +34,17 @@ def draw_triangle_port(painter, rect, info):
     port_poly = transform.map(triangle)
 
     # mouse over port color.
-    if info['hovered']:
+    if info["hovered"]:
         color = QtGui.QColor(14, 45, 59)
         border_color = QtGui.QColor(136, 255, 35)
     # port connected color.
-    elif info['connected']:
+    elif info["connected"]:
         color = QtGui.QColor(195, 60, 60)
         border_color = QtGui.QColor(200, 130, 70)
     # default port color
     else:
-        color = QtGui.QColor(*info['color'])
-        border_color = QtGui.QColor(*info['border_color'])
+        color = QtGui.QColor(*info["color"])
+        border_color = QtGui.QColor(*info["border_color"])
 
     pen = QtGui.QPen(border_color, 1.8)
     pen.setJoinStyle(QtCore.Qt.MiterJoin)
@@ -78,17 +77,17 @@ def draw_square_port(painter, rect, info):
     painter.save()
 
     # mouse over port color.
-    if info['hovered']:
+    if info["hovered"]:
         color = QtGui.QColor(14, 45, 59)
         border_color = QtGui.QColor(136, 255, 35, 255)
     # port connected color.
-    elif info['connected']:
+    elif info["connected"]:
         color = QtGui.QColor(195, 60, 60)
         border_color = QtGui.QColor(200, 130, 70)
     # default port color
     else:
-        color = QtGui.QColor(*info['color'])
-        border_color = QtGui.QColor(*info['border_color'])
+        color = QtGui.QColor(*info["color"])
+        border_color = QtGui.QColor(*info["border_color"])
 
     pen = QtGui.QPen(border_color, 1.8)
     pen.setJoinStyle(QtCore.Qt.MiterJoin)
@@ -106,16 +105,16 @@ class CustomPortsNode(BaseNode):
     """
 
     # set a unique node identifier.
-    __identifier__ = 'nodes.custom.ports'
+    __identifier__ = "nodes.custom.ports"
 
     # set the initial default node name.
-    NODE_NAME = 'node'
+    NODE_NAME = "node"
 
     def __init__(self):
         super(CustomPortsNode, self).__init__()
 
         # create input and output port.
-        self.add_input('in', color=(200, 10, 0))
-        self.add_output('default')
-        self.add_output('square', painter_func=draw_square_port)
-        self.add_output('triangle', painter_func=draw_triangle_port)
+        self.add_input("in", color=(200, 10, 0))
+        self.add_output("default")
+        self.add_output("square", painter_func=draw_square_port)
+        self.add_output("triangle", painter_func=draw_triangle_port)

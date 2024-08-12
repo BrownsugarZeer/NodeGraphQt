@@ -1,5 +1,3 @@
-#!/usr/bin/python
-# -*- coding: utf-8 -*-
 """
 **NodeGraphQt** is a node graph framework that can be implemented and re purposed
 into applications that supports **PySide2**.
@@ -43,6 +41,7 @@ example code:
 
         app.exec_()
 """
+
 from .pkg_info import __version__ as VERSION
 from .pkg_info import __license__ as LICENSE
 
@@ -64,30 +63,30 @@ from .custom_widgets.nodes_tree import NodesTreeWidget
 from .custom_widgets.nodes_palette import NodesPaletteWidget
 from .custom_widgets.properties_bin.node_property_widgets import (
     NodePropEditorWidget,
-    PropertiesBinWidget
+    PropertiesBinWidget,
 )
 
 
 __version__ = VERSION
 __all__ = [
-    'BackdropNode',
-    'BaseNode',
-    'BaseNodeCircle',
-    'GroupNode',
-    'LICENSE',
-    'NodeBaseWidget',
-    'NodeGraph',
-    'NodeGraphCommand',
-    'NodeGraphMenu',
-    'NodeObject',
-    'NodesPaletteWidget',
-    'NodePropEditorWidget',
-    'NodesTreeWidget',
-    'NodesMenu',
-    'Port',
-    'PropertiesBinWidget',
-    'SubGraph',
-    'VERSION',
-    'constants',
-    'custom_widgets'
+    "BackdropNode",
+    "BaseNode",
+    "BaseNodeCircle",
+    "GroupNode",
+    "LICENSE",
+    "NodeBaseWidget",
+    "NodeGraph",
+    "NodeGraphCommand",
+    "NodeGraphMenu",
+    "NodeObject",
+    "NodesPaletteWidget",
+    "NodePropEditorWidget",
+    "NodesTreeWidget",
+    "NodesMenu",
+    "Port",
+    "PropertiesBinWidget",
+    "SubGraph",
+    "VERSION",
+    "constants",
+    "custom_widgets",
 ]

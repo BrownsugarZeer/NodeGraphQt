@@ -1,21 +1,16 @@
-#!/usr/bin/python
 from collections import OrderedDict
 
 from NodeGraphQt.base.commands import NodeVisibleCmd, NodeWidgetVisibleCmd
 from NodeGraphQt.base.node import NodeObject
 from NodeGraphQt.base.port import Port
 from NodeGraphQt.constants import NodePropWidgetEnum, PortTypeEnum
-from NodeGraphQt.errors import (
-    PortError,
-    PortRegistrationError,
-    NodeWidgetError
-)
+from NodeGraphQt.errors import PortError, PortRegistrationError, NodeWidgetError
 from NodeGraphQt.qgraphics.node_base import NodeItem
 from NodeGraphQt.widgets.node_widgets import (
     NodeBaseWidget,
     NodeCheckBox,
     NodeComboBox,
-    NodeLineEdit
+    NodeLineEdit,
 )
 
 
@@ -54,7 +49,7 @@ class BaseNode(NodeObject):
                 self.add_output('out')
     """
 
-    NODE_NAME = 'Node'
+    NODE_NAME = "Node"
 
     def __init__(self, qgraphics_item=None):
         super(BaseNode, self).__init__(qgraphics_item or NodeItem)
@@ -66,7 +61,7 @@ class BaseNode(NodeObject):
         Update the node model from view.
         """
         for name, val in self.view.properties.items():
-            if name in ['inputs', 'outputs']:
+            if name in ["inputs", "outputs"]:
                 continue
             self.model.set_property(name, val)
 
@@ -86,7 +81,7 @@ class BaseNode(NodeObject):
         if self.get_property(name) == value:
             return
 
-        if name == 'visible':
+        if name == "visible":
             if self.graph:
                 undo_cmd = NodeVisibleCmd(self, value)
                 if push_undo:
@@ -94,7 +89,7 @@ class BaseNode(NodeObject):
                 else:
                     undo_cmd.redo()
                 return
-        elif name == 'disabled':
+        elif name == "disabled":
             # redraw the connected pipes in the scene.
             ports = self.view.inputs + self.view.outputs
             for port in ports:
@@ -132,7 +127,7 @@ class BaseNode(NodeObject):
         Args:
             icon (str): path to the icon image.
         """
-        self.set_property('icon', icon)
+        self.set_property("icon", icon)
 
     def icon(self):
         """
@@ -190,26 +185,19 @@ class BaseNode(NodeObject):
             tab (str): name of the widget tab to display in.
         """
         if not isinstance(widget, NodeBaseWidget):
-            raise NodeWidgetError(
-                '\'widget\' must be an instance of a NodeBaseWidget')
+            raise NodeWidgetError("'widget' must be an instance of a NodeBaseWidget")
 
         widget_type = widget_type or NodePropWidgetEnum.HIDDEN.value
-        self.create_property(widget.get_name(),
-                             widget.get_value(),
-                             widget_type=widget_type,
-                             tab=tab)
+        self.create_property(
+            widget.get_name(), widget.get_value(), widget_type=widget_type, tab=tab
+        )
         widget.value_changed.connect(lambda k, v: self.set_property(k, v))
         widget._node = self
         self.view.add_widget(widget)
         #: redraw node to address calls outside the "__init__" func.
         self.view.draw_node()
 
-        #: HACK: calling the .parent() function here on the widget as it seems
-        #        to address a seg fault issue when exiting the application.
-        widget.parent()
-
-    def add_combo_menu(self, name, label='', items=None, tooltip=None,
-                       tab=None):
+    def add_combo_menu(self, name, label="", items=None, tooltip=None, tab=None):
         """
         Creates a custom property with the :meth:`NodeObject.create_property`
         function and embeds a :class:`PySide2.QtWidgets.QComboBox` widget
@@ -232,17 +220,18 @@ class BaseNode(NodeObject):
             items=items or [],
             widget_type=NodePropWidgetEnum.QCOMBO_BOX.value,
             widget_tooltip=tooltip,
-            tab=tab
+            tab=tab,
         )
         widget = NodeComboBox(self.view, name, label, items)
-        widget.setToolTip(tooltip or '')
+        widget.setToolTip(tooltip or "")
         widget.value_changed.connect(lambda k, v: self.set_property(k, v))
         self.view.add_widget(widget)
         #: redraw node to address calls outside the "__init__" func.
         self.view.draw_node()
 
-    def add_text_input(self, name, label='', text='', placeholder_text='',
-                       tooltip=None, tab=None):
+    def add_text_input(
+        self, name, label="", text="", placeholder_text="", tooltip=None, tab=None
+    ):
         """
         Creates a custom property with the :meth:`NodeObject.create_property`
         function and embeds a :class:`PySide2.QtWidgets.QLineEdit` widget
@@ -265,17 +254,18 @@ class BaseNode(NodeObject):
             value=text,
             widget_type=NodePropWidgetEnum.QLINE_EDIT.value,
             widget_tooltip=tooltip,
-            tab=tab
+            tab=tab,
         )
         widget = NodeLineEdit(self.view, name, label, text, placeholder_text)
-        widget.setToolTip(tooltip or '')
+        widget.setToolTip(tooltip or "")
         widget.value_changed.connect(lambda k, v: self.set_property(k, v))
         self.view.add_widget(widget)
         #: redraw node to address calls outside the "__init__" func.
         self.view.draw_node()
 
-    def add_checkbox(self, name, label='', text='', state=False, tooltip=None,
-                     tab=None):
+    def add_checkbox(
+        self, name, label="", text="", state=False, tooltip=None, tab=None
+    ):
         """
         Creates a custom property with the :meth:`NodeObject.create_property`
         function and embeds a :class:`PySide2.QtWidgets.QCheckBox` widget
@@ -298,10 +288,10 @@ class BaseNode(NodeObject):
             value=state,
             widget_type=NodePropWidgetEnum.QCHECK_BOX.value,
             widget_tooltip=tooltip,
-            tab=tab
+            tab=tab,
         )
         widget = NodeCheckBox(self.view, name, label, text, state)
-        widget.setToolTip(tooltip or '')
+        widget.setToolTip(tooltip or "")
         widget.value_changed.connect(lambda k, v: self.set_property(k, v))
         self.view.add_widget(widget)
         #: redraw node to address calls outside the "__init__" func.
@@ -349,8 +339,15 @@ class BaseNode(NodeObject):
         else:
             undo_cmd.redo()
 
-    def add_input(self, name='input', multi_input=False, display_name=True,
-                  color=None, locked=False, painter_func=None):
+    def add_input(
+        self,
+        name="input",
+        multi_input=False,
+        display_name=True,
+        color=None,
+        locked=False,
+        painter_func=None,
+    ):
         """
         Add input :class:`Port` to node.
 
@@ -371,7 +368,8 @@ class BaseNode(NodeObject):
         """
         if name in self.inputs().keys():
             raise PortRegistrationError(
-                'port name "{}" already registered.'.format(name))
+                'port name "{}" already registered.'.format(name)
+            )
 
         port_args = [name, multi_input, display_name, locked]
         if painter_func and callable(painter_func):
@@ -392,8 +390,15 @@ class BaseNode(NodeObject):
         self.model.inputs[port.name()] = port.model
         return port
 
-    def add_output(self, name='output', multi_output=True, display_name=True,
-                   color=None, locked=False, painter_func=None):
+    def add_output(
+        self,
+        name="output",
+        multi_output=True,
+        display_name=True,
+        color=None,
+        locked=False,
+        painter_func=None,
+    ):
         """
         Add output :class:`Port` to node.
 
@@ -414,7 +419,8 @@ class BaseNode(NodeObject):
         """
         if name in self.outputs().keys():
             raise PortRegistrationError(
-                'port name "{}" already registered.'.format(name))
+                'port name "{}" already registered.'.format(name)
+            )
 
         port_args = [name, multi_output, display_name, locked]
         if painter_func and callable(painter_func):
@@ -487,9 +493,10 @@ class BaseNode(NodeObject):
         if not self.port_deletion_allowed():
             raise PortError(
                 'Port "{}" can\'t be deleted on this node because '
-                '"ports_removable" is not enabled.'.format(port.name()))
+                '"ports_removable" is not enabled.'.format(port.name())
+            )
         if port.locked():
-            raise PortError('Error: Can\'t delete a port that is locked!')
+            raise PortError("Error: Can't delete a port that is locked!")
         self._inputs.remove(port)
         self._model.inputs.pop(port.name())
         self._view.delete_input(port.view)
@@ -517,9 +524,10 @@ class BaseNode(NodeObject):
         if not self.port_deletion_allowed():
             raise PortError(
                 'Port "{}" can\'t be deleted on this node because '
-                '"ports_removable" is not enabled.'.format(port.name()))
+                '"ports_removable" is not enabled.'.format(port.name())
+            )
         if port.locked():
-            raise PortError('Error: Can\'t delete a port that is locked!')
+            raise PortError("Error: Can't delete a port that is locked!")
         self._outputs.remove(port)
         self._model.outputs.pop(port.name())
         self._view.delete_output(port.view)
@@ -588,8 +596,9 @@ class BaseNode(NodeObject):
         """
         if not self.port_deletion_allowed():
             raise PortError(
-                'Ports cannot be set on this node because '
-                '"set_port_deletion_allowed" is not enabled on this node.')
+                "Ports cannot be set on this node because "
+                '"set_port_deletion_allowed" is not enabled on this node.'
+            )
 
         for port in self._inputs:
             self._view.delete_input(port.view)
@@ -602,16 +611,24 @@ class BaseNode(NodeObject):
         self._model.outputs = {}
         self._model.inputs = {}
 
-        [self.add_input(name=port['name'],
-                        multi_input=port['multi_connection'],
-                        display_name=port['display_name'],
-                        locked=port.get('locked') or False)
-         for port in port_data['input_ports']]
-        [self.add_output(name=port['name'],
-                         multi_output=port['multi_connection'],
-                         display_name=port['display_name'],
-                         locked=port.get('locked') or False)
-         for port in port_data['output_ports']]
+        [
+            self.add_input(
+                name=port["name"],
+                multi_input=port["multi_connection"],
+                display_name=port["display_name"],
+                locked=port.get("locked") or False,
+            )
+            for port in port_data["input_ports"]
+        ]
+        [
+            self.add_output(
+                name=port["name"],
+                multi_output=port["multi_connection"],
+                display_name=port["display_name"],
+                locked=port.get("locked") or False,
+            )
+            for port in port_data["output_ports"]
+        ]
         self._view.draw_node()
 
     def inputs(self):
@@ -753,9 +770,9 @@ class BaseNode(NodeObject):
             port_name=port.name(),
             port_type=port.type_(),
             node_type=self.type_,
-            accept_pname=port_type_data['port_name'],
-            accept_ptype=port_type_data['port_type'],
-            accept_ntype=port_type_data['node_type']
+            accept_pname=port_type_data["port_name"],
+            accept_ptype=port_type_data["port_type"],
+            accept_ntype=port_type_data["node_type"],
         )
 
     def accepted_port_types(self, port):
@@ -774,9 +791,7 @@ class BaseNode(NodeObject):
             raise PortError('Node does not contain port "{}"'.format(port))
 
         accepted_types = self.graph.model.port_accept_connection_types(
-            node_type=self.type_,
-            port_type=port.type_(),
-            port_name=port.name()
+            node_type=self.type_, port_type=port.type_(), port_name=port.name()
         )
         return accepted_types
 
@@ -813,9 +828,9 @@ class BaseNode(NodeObject):
             port_name=port.name(),
             port_type=port.type_(),
             node_type=self.type_,
-            reject_pname=port_type_data['port_name'],
-            reject_ptype=port_type_data['port_type'],
-            reject_ntype=port_type_data['node_type']
+            reject_pname=port_type_data["port_name"],
+            reject_ptype=port_type_data["port_type"],
+            reject_ntype=port_type_data["node_type"],
         )
 
     def rejected_port_types(self, port):
@@ -834,9 +849,7 @@ class BaseNode(NodeObject):
             raise PortError('Node does not contain port "{}"'.format(port))
 
         rejected_types = self.graph.model.port_reject_connection_types(
-            node_type=self.type_,
-            port_type=port.type_(),
-            port_name=port.name()
+            node_type=self.type_, port_type=port.type_(), port_name=port.name()
         )
         return rejected_types
 

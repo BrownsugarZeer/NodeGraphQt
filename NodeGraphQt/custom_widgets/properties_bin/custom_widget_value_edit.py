@@ -1,9 +1,8 @@
-#!/usr/bin/python
 import re
 
-from Qt import QtWidgets, QtCore, QtGui
+from PySide6 import QtWidgets, QtCore, QtGui
 
-_NUMB_REGEX = re.compile(r'^((?:\-)*\d+)*([\.,])*(\d+(?:[eE](?:[\-\+])*\d+)*)*')
+_NUMB_REGEX = re.compile(r"^((?:\-)*\d+)*([\.,])*(\d+(?:[eE](?:[\-\+])*\d+)*)*")
 
 
 class _NumberValueMenu(QtWidgets.QMenu):
@@ -19,8 +18,7 @@ class _NumberValueMenu(QtWidgets.QMenu):
         self.last_action = None
 
     def __repr__(self):
-        return '<{}() object at {}>'.format(
-            self.__class__.__name__, hex(id(self)))
+        return "<{}() object at {}>".format(self.__class__.__name__, hex(id(self)))
 
     # re-implemented.
 
@@ -53,7 +51,7 @@ class _NumberValueMenu(QtWidgets.QMenu):
             self.setActiveAction(self.last_action)
 
     def _add_step_action(self, step):
-        action = QtWidgets.QAction(str(step), self)
+        action = QtGui.QAction(str(step), self)
         action.step = step
         self.addAction(action)
 
@@ -67,7 +65,7 @@ class _NumberValueMenu(QtWidgets.QMenu):
         if data_type is int:
             new_steps = []
             for step in self.steps:
-                if '.' not in str(step):
+                if "." not in str(step):
                     new_steps.append(step)
             self.set_steps(new_steps)
         elif data_type is float:
@@ -81,7 +79,7 @@ class _NumberValueEdit(QtWidgets.QLineEdit):
     def __init__(self, parent=None, data_type=float):
         super(_NumberValueEdit, self).__init__(parent)
         self.setToolTip('"MMB + Drag Left/Right" to change values.')
-        self.setText('0')
+        self.setText("0")
 
         self._MMB_STATE = False
         self._previous_x = None
@@ -102,8 +100,7 @@ class _NumberValueEdit(QtWidgets.QLineEdit):
         self.set_data_type(data_type)
 
     def __repr__(self):
-        return '<{}() object at {}>'.format(
-            self.__class__.__name__, hex(id(self)))
+        return "<{}() object at {}>".format(self.__class__.__name__, hex(id(self)))
 
     # re-implemented
 
@@ -122,7 +119,7 @@ class _NumberValueEdit(QtWidgets.QLineEdit):
         super(_NumberValueEdit, self).mouseMoveEvent(event)
 
     def mousePressEvent(self, event):
-        if event.button() == QtCore.Qt.MiddleButton:
+        if event.button() == QtCore.Qt.MouseButton.MiddleButton:
             self._MMB_STATE = True
             self._reset_previous_x()
             self._menu.exec_(QtGui.QCursor.pos())
@@ -135,9 +132,9 @@ class _NumberValueEdit(QtWidgets.QLineEdit):
 
     def keyPressEvent(self, event):
         super(_NumberValueEdit, self).keyPressEvent(event)
-        if event.key() == QtCore.Qt.Key_Up:
+        if event.key() == QtCore.Qt.Key.Key_Up:
             return
-        elif event.key() == QtCore.Qt.Key_Down:
+        elif event.key() == QtCore.Qt.Key.Key_Down:
             return
 
     # private
@@ -154,8 +151,8 @@ class _NumberValueEdit(QtWidgets.QLineEdit):
             if match:
                 val1, point, val2 = match.groups()
                 if point:
-                    val1 = val1 or '0'
-                    val2 = val2 or '0'
+                    val1 = val1 or "0"
+                    val2 = val2 or "0"
                     self.setText(val1 + point + val2)
         self.value_changed.emit(self.get_value())
 
@@ -172,9 +169,9 @@ class _NumberValueEdit(QtWidgets.QLineEdit):
         match = _NUMB_REGEX.match(text)
         if match:
             val1, _, val2 = match.groups()
-            val1 = val1 or '0'
-            val2 = val2 or '0'
-            value = float(val1 + '.' + val2)
+            val1 = val1 or "0"
+            val2 = val2 or "0"
+            value = float(val1 + "." + val2)
         else:
             value = 0.0
         if self._data_type is int:
@@ -192,14 +189,14 @@ class _NumberValueEdit(QtWidgets.QLineEdit):
         """
         self._data_type = data_type
         if data_type is int:
-            regexp = QtCore.QRegExp(r'\d+')
-            validator = QtGui.QRegExpValidator(regexp, self)
+            regexp = QtCore.QRegularExpression(r"\d+")
+            validator = QtGui.QRegularExpressionValidator(regexp, self)
             steps = [1, 10, 100, 1000]
             self._min = None if self._min is None else int(self._min)
             self._max = None if self._max is None else int(self._max)
         elif data_type is float:
-            regexp = QtCore.QRegExp(r'\d+[\.,]\d+(?:[eE](?:[\-\+]|)\d+)*')
-            validator = QtGui.QRegExpValidator(regexp, self)
+            regexp = QtCore.QRegularExpression(r"\d+[\.,]\d+(?:[eE](?:[\-\+]|)\d+)*")
+            validator = QtGui.QRegularExpressionValidator(regexp, self)
             steps = [0.001, 0.01, 0.1, 1]
             self._min = None if self._min is None else float(self._min)
             self._max = None if self._max is None else float(self._max)
@@ -216,10 +213,7 @@ class _NumberValueEdit(QtWidgets.QLineEdit):
         Args:
             steps (list[int] or list[float]): list of ints or floats.
         """
-        step_types = {
-            int: [1, 10, 100, 1000],
-            float: [0.001, 0.01, 0.1, 1]
-        }
+        step_types = {int: [1, 10, 100, 1000], float: [0.001, 0.01, 0.1, 1]}
         steps = steps or step_types.get(self._data_type)
         self._menu.set_steps(steps)
 
@@ -267,11 +261,11 @@ class _NumberValueEdit(QtWidgets.QLineEdit):
         if self._min is not None and converted < self._min:
             text = str(self._min)
             if point and point not in text:
-                text = str(self._min).replace('.', point)
+                text = str(self._min).replace(".", point)
         if self._max is not None and converted > self._max:
             text = str(self._max)
             if point and point not in text:
-                text = text.replace('.', point)
+                text = text.replace(".", point)
         self.setText(text)
 
 
@@ -287,7 +281,7 @@ class FloatValueEdit(_NumberValueEdit):
         super(FloatValueEdit, self).__init__(parent, data_type=float)
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     app = QtWidgets.QApplication([])
 
     int_edit = IntValueEdit()

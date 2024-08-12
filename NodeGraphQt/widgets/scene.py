@@ -1,5 +1,4 @@
-#!/usr/bin/python
-from Qt import QtGui, QtCore, QtWidgets
+from PySide6 import QtGui, QtCore, QtWidgets
 
 from NodeGraphQt.constants import ViewerEnum
 
@@ -15,8 +14,7 @@ class NodeScene(QtWidgets.QGraphicsScene):
 
     def __repr__(self):
         cls_name = str(self.__class__.__name__)
-        return '<{}("{}") object at {}>'.format(
-            cls_name, self.viewer(), hex(id(self)))
+        return '<{}("{}") object at {}>'.format(cls_name, self.viewer(), hex(id(self)))
 
     # def _draw_text(self, painter, pen):
     #     font = QtGui.QFont()
@@ -46,13 +44,17 @@ class NodeScene(QtWidgets.QGraphicsScene):
         first_top = top - (top % grid_size)
 
         lines = []
-        lines.extend([
-            QtCore.QLineF(x, top, x, bottom)
-            for x in range(first_left, right, grid_size)
-        ])
-        lines.extend([
-            QtCore.QLineF(left, y, right, y)
-            for y in range(first_top, bottom, grid_size)]
+        lines.extend(
+            [
+                QtCore.QLineF(x, top, x, bottom)
+                for x in range(first_left, right, grid_size)
+            ]
+        )
+        lines.extend(
+            [
+                QtCore.QLineF(left, y, right, y)
+                for y in range(first_top, bottom, grid_size)
+            ]
         )
 
         painter.setPen(pen)
@@ -83,15 +85,17 @@ class NodeScene(QtWidgets.QGraphicsScene):
         pen.setWidth(grid_size / 10)
         painter.setPen(pen)
 
-        [painter.drawPoint(int(x), int(y))
-         for x in range(first_left, right, grid_size)
-         for y in range(first_top, bottom, grid_size)]
+        [
+            painter.drawPoint(int(x), int(y))
+            for x in range(first_left, right, grid_size)
+            for y in range(first_top, bottom, grid_size)
+        ]
 
     def drawBackground(self, painter, rect):
         super(NodeScene, self).drawBackground(painter, rect)
 
         painter.save()
-        painter.setRenderHint(QtGui.QPainter.Antialiasing, False)
+        painter.setRenderHint(QtGui.QPainter.RenderHint.Antialiasing, False)
         painter.setBrush(self.backgroundBrush())
 
         if self._grid_mode is ViewerEnum.GRID_DISPLAY_DOTS.value:
@@ -102,17 +106,13 @@ class NodeScene(QtWidgets.QGraphicsScene):
             zoom = self.viewer().get_zoom()
             if zoom > -0.5:
                 pen = QtGui.QPen(QtGui.QColor(*self.grid_color), 0.65)
-                self._draw_grid(
-                    painter, rect, pen, ViewerEnum.GRID_SIZE.value
-                )
+                self._draw_grid(painter, rect, pen, ViewerEnum.GRID_SIZE.value)
 
             color = QtGui.QColor(*self._bg_color).darker(200)
             if zoom < -0.0:
                 color = color.darker(100 - int(zoom * 110))
             pen = QtGui.QPen(color, 0.65)
-            self._draw_grid(
-                painter, rect, pen, ViewerEnum.GRID_SIZE.value * 8
-            )
+            self._draw_grid(painter, rect, pen, ViewerEnum.GRID_SIZE.value * 8)
 
         painter.restore()
 
@@ -121,11 +121,13 @@ class NodeScene(QtWidgets.QGraphicsScene):
         if self.viewer():
             self.viewer().sceneMousePressEvent(event)
         super(NodeScene, self).mousePressEvent(event)
-        keep_selection = any([
-            event.button() == QtCore.Qt.MiddleButton,
-            event.button() == QtCore.Qt.RightButton,
-            event.modifiers() == QtCore.Qt.AltModifier
-        ])
+        keep_selection = any(
+            [
+                event.button() == QtCore.Qt.MouseButton.MiddleButton,
+                event.button() == QtCore.Qt.MouseButton.RightButton,
+                event.modifiers() == QtCore.Qt.KeyboardModifier.AltModifier,
+            ]
+        )
         if keep_selection:
             for node in selected_nodes:
                 node.setSelected(True)

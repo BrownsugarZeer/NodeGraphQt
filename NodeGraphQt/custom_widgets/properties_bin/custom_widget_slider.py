@@ -1,5 +1,4 @@
-#!/usr/bin/python
-from Qt import QtWidgets, QtCore
+from PySide6 import QtWidgets, QtCore
 
 from .prop_widgets_abstract import BaseProperty
 
@@ -21,11 +20,15 @@ class PropSlider(BaseProperty):
         self._init_signal_connections()
 
     def _init(self):
-        self._slider.setOrientation(QtCore.Qt.Horizontal)
-        self._slider.setTickPosition(QtWidgets.QSlider.TicksBelow)
-        self._slider.setSizePolicy(QtWidgets.QSizePolicy.Expanding,
-                                   QtWidgets.QSizePolicy.Preferred)
-        self._spinbox.setButtonSymbols(QtWidgets.QAbstractSpinBox.NoButtons)
+        self._slider.setOrientation(QtCore.Qt.Orientation.Horizontal)
+        self._slider.setTickPosition(QtWidgets.QSlider.TickPosition.TicksBelow)
+        self._slider.setSizePolicy(
+            QtWidgets.QSizePolicy.Policy.Expanding,
+            QtWidgets.QSizePolicy.Policy.Preferred,
+        )
+        self._spinbox.setButtonSymbols(
+            QtWidgets.QAbstractSpinBox.ButtonSymbols.NoButtons
+        )
         layout = QtWidgets.QHBoxLayout(self)
         layout.setContentsMargins(0, 0, 0, 0)
         layout.addWidget(self._spinbox)
@@ -87,7 +90,7 @@ class QDoubleSlider(QtWidgets.QSlider):
 
     def __init__(self, decimals=2, *args, **kargs):
         super(QDoubleSlider, self).__init__(*args, **kargs)
-        self._multiplier = 10 ** decimals
+        self._multiplier = 10**decimals
 
         self.valueChanged.connect(self._on_value_change)
 
@@ -115,7 +118,9 @@ class QDoubleSlider(QtWidgets.QSlider):
 
 
 class PropDoubleSlider(PropSlider):
-    def __init__(self, parent=None, decimals=2, disable_scroll=True, realtime_update=False):
+    def __init__(
+        self, parent=None, decimals=2, disable_scroll=True, realtime_update=False
+    ):
         # Do not initialize Propslider, just its parents
         super(PropSlider, self).__init__(parent)
         self._block = False

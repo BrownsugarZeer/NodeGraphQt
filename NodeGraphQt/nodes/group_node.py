@@ -1,4 +1,3 @@
-#!/usr/bin/python
 from NodeGraphQt.nodes.base_node import BaseNode
 from NodeGraphQt.nodes.port_node import PortInputNode, PortOutputNode
 from NodeGraphQt.qgraphics.node_group import GroupNodeItem
@@ -19,7 +18,7 @@ class GroupNode(BaseNode):
     -
     """
 
-    NODE_NAME = 'Group'
+    NODE_NAME = "Group"
 
     def __init__(self, qgraphics_item=None):
         super(GroupNode, self).__init__(qgraphics_item or GroupNodeItem)
@@ -91,7 +90,7 @@ class GroupNode(BaseNode):
         """
         self.graph.collapse_group_node(self)
 
-    def set_name(self, name=''):
+    def set_name(self, name=""):
         super(GroupNode, self).set_name(name)
         # update the tab bar and navigation labels.
         sub_graph = self.get_sub_graph()
@@ -107,40 +106,54 @@ class GroupNode(BaseNode):
                         tab_bar.setTabText(idx, self.name())
                         break
 
-    def add_input(self, name='input', multi_input=False, display_name=True,
-                  color=None, locked=False, painter_func=None):
+    def add_input(
+        self,
+        name="input",
+        multi_input=False,
+        display_name=True,
+        color=None,
+        locked=False,
+        painter_func=None,
+    ):
         port = super(GroupNode, self).add_input(
             name=name,
             multi_input=multi_input,
             display_name=display_name,
             color=color,
             locked=locked,
-            painter_func=painter_func
+            painter_func=painter_func,
         )
         if self.is_expanded:
             input_node = PortInputNode(parent_port=port)
             input_node.NODE_NAME = port.name()
-            input_node.model.set_property('name', port.name())
+            input_node.model.set_property("name", port.name())
             input_node.add_output(port.name())
             sub_graph = self.get_sub_graph()
             sub_graph.add_node(input_node, selected=False, push_undo=False)
 
         return port
 
-    def add_output(self, name='output', multi_output=True, display_name=True,
-                   color=None, locked=False, painter_func=None):
+    def add_output(
+        self,
+        name="output",
+        multi_output=True,
+        display_name=True,
+        color=None,
+        locked=False,
+        painter_func=None,
+    ):
         port = super(GroupNode, self).add_output(
             name=name,
             multi_output=multi_output,
             display_name=display_name,
             color=color,
             locked=locked,
-            painter_func=painter_func
+            painter_func=painter_func,
         )
         if self.is_expanded:
             output_port = PortOutputNode(parent_port=port)
             output_port.NODE_NAME = port.name()
-            output_port.model.set_property('name', port.name())
+            output_port.model.set_property("name", port.name())
             output_port.add_input(port.name())
             sub_graph = self.get_sub_graph()
             sub_graph.add_node(output_port, selected=False, push_undo=False)
