@@ -1220,7 +1220,7 @@ class NodeViewer(QtWidgets.QGraphicsView):
         Get the undo QAction from the parent undo stack.
 
         Returns:
-            QtWidgets.QAction: undo action.
+            QtGui.QAction: undo action.
         """
         return self._undo_action
 
@@ -1229,7 +1229,7 @@ class NodeViewer(QtWidgets.QGraphicsView):
         Get the redo QAction from the parent undo stack.
 
         Returns:
-            QtWidgets.QAction: redo action.
+            QtGui.QAction: redo action.
         """
         return self._redo_action
 

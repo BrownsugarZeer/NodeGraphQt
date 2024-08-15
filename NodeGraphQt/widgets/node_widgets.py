@@ -93,7 +93,7 @@ class NodeBaseWidget(QtWidgets.QGraphicsProxyWidget):
     """
 
     def __init__(self, parent=None, name=None, label=""):
-        super(NodeBaseWidget, self).__init__(parent)
+        super().__init__(parent)
         self.setZValue(Z_VAL_NODE_WIDGET)
         self._name = name
         self._label = label
@@ -101,8 +101,8 @@ class NodeBaseWidget(QtWidgets.QGraphicsProxyWidget):
 
     def setToolTip(self, tooltip):
         tooltip = tooltip.replace("\n", "<br/>")
-        tooltip = "<b>{}</b><br/>{}".format(self.get_name(), tooltip)
-        super(NodeBaseWidget, self).setToolTip(tooltip)
+        tooltip = f"<b>{self.get_name()}</b><br/>{tooltip}"
+        super().setToolTip(tooltip)
 
     def on_value_changed(self, *args, **kwargs):
         """
@@ -257,7 +257,7 @@ class NodeComboBox(NodeBaseWidget):
     """
 
     def __init__(self, parent=None, name="", label="", items=None):
-        super(NodeComboBox, self).__init__(parent, name, label)
+        super().__init__(parent, name, label)
         self.setZValue(Z_VAL_NODE_WIDGET + 1)
         combo = QtWidgets.QComboBox()
         combo.setMinimumHeight(24)

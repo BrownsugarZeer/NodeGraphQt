@@ -227,7 +227,7 @@ class TabSearchMenuWidget(QtWidgets.QMenu):
     def _on_search_submitted(self):
         if not self._block_submit:
             action = self.sender()
-            if type(action) is not QtWidgets.QAction:
+            if type(action) is not QtGui.QAction:
                 if len(self._searched_actions) > 0:
                     action = self._searched_actions[0]
                 else:
@@ -278,7 +278,7 @@ class TabSearchMenuWidget(QtWidgets.QMenu):
                     parent_menu.addMenu(menu)
 
         for name in node_names:
-            action = QtWidgets.QAction(name, self)
+            action = QtGui.QAction(name, self)
             action.setText(name)
             action.triggered.connect(self._on_search_submitted)
             self._actions[name] = action

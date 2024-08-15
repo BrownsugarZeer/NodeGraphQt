@@ -25,9 +25,9 @@ class PortModel(object):
         self.connected_ports = defaultdict(list)
 
     def __repr__(self):
-        return "<{}('{}') object at {}>".format(
-            self.__class__.__name__, self.name, hex(id(self))
-        )
+        msg = f"{self.__class__.__name__}('{self.name}')"
+        msg = f"<{msg} object at {hex(id(self))}>"
+        return msg
 
     @property
     def to_dict(self):
@@ -79,6 +79,7 @@ class NodeModel(object):
         self.port_deletion_allowed = False
 
         # GroupNode attrs.
+        # TODO: no longer used?
         self.subgraph_session = {}
 
         # Custom

@@ -74,10 +74,8 @@ class NodeFactory(object):
 
         if self.__nodes.get(node_type):
             raise NodeRegistrationError(
-                'node type "{}" already registered to "{}"! '
-                "Please specify a new plugin class name or __identifier__.".format(
-                    node_type, self.__nodes[node_type]
-                )
+                f"node type `{node_type}` already registered to `{self.__nodes[node_type]}`! "
+                "Please specify a new plugin class name or __identifier__."
             )
         self.__nodes[node_type] = node
 
@@ -89,9 +87,7 @@ class NodeFactory(object):
         if alias:
             if self.__aliases.get(alias):
                 raise NodeRegistrationError(
-                    'Alias: "{}" already registered to "{}"'.format(
-                        alias, self.__aliases.get(alias)
-                    )
+                    f"Alias: `{alias}` already registered to `{self.__aliases.get(alias)}`"
                 )
             self.__aliases[alias] = node_type
 

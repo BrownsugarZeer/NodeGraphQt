@@ -35,8 +35,9 @@ class Port(object):
         self.__model = PortModel(node)
 
     def __repr__(self):
-        port = str(self.__class__.__name__)
-        return '<{}("{}") object at {}>'.format(port, self.name(), hex(id(self)))
+        msg = f"{self.__class__.__name__}('{self.name()}')"
+        msg = f"<{msg} object at {hex(id(self))}>"
+        return msg
 
     @property
     def view(self):
@@ -224,7 +225,7 @@ class Port(object):
 
         if self.locked() or port.locked():
             name = [p.name() for p in [self, port] if p.locked()][0]
-            raise PortError('Can\'t connect port because "{}" is locked.'.format(name))
+            raise PortError(f"Can't connect port because '{name}' is locked.")
 
         # validate accept connection.
         node_type = self.node().type_
@@ -331,9 +332,7 @@ class Port(object):
 
         if self.locked() or port.locked():
             name = [p.name() for p in [self, port] if p.locked()][0]
-            raise PortError(
-                'Can\'t disconnect port because "{}" is locked.'.format(name)
-            )
+            raise PortError(f"Can't disconnect port because '{name}' is locked.")
 
         graph = self.node().graph
         if push_undo:

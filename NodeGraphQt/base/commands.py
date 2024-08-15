@@ -1,4 +1,4 @@
-from PySide6 import QtGui, QtWidgets
+from PySide6 import QtGui
 
 from NodeGraphQt.constants import PortTypeEnum
 
@@ -15,7 +15,7 @@ class PropertyChangedCmd(QtGui.QUndoCommand):
 
     def __init__(self, node, name, value):
         super().__init__()
-        self.setText('property "{}:{}"'.format(node.name(), name))
+        self.setText(f"property '{node.name()}:{name}'")
         self.node = node
         self.name = name
         self.old_val = node.get_property(name)
@@ -36,7 +36,7 @@ class PropertyChangedCmd(QtGui.QUndoCommand):
         if hasattr(view, "widgets") and name in view.widgets.keys():
             # check if previous value is identical to current value,
             # prevent signals from causing an infinite loop.
-            if view.widgets[name].get_value() != value:
+            if view.widgets[name].get_value() is not value:
                 view.widgets[name].set_value(value)
 
         # view properties.
@@ -51,11 +51,11 @@ class PropertyChangedCmd(QtGui.QUndoCommand):
         graph.property_changed.emit(self.node, self.name, value)
 
     def undo(self):
-        if self.old_val != self.new_val:
+        if self.old_val is not self.new_val:
             self.set_node_property(self.name, self.old_val)
 
     def redo(self):
-        if self.old_val != self.new_val:
+        if self.old_val is not self.new_val:
             self.set_node_property(self.name, self.new_val)
 
 
@@ -115,7 +115,7 @@ class NodeWidgetVisibleCmd(QtGui.QUndoCommand):
     def __init__(self, node, name, visible):
         super().__init__()
         label = "show" if visible else "hide"
-        self.setText('{} node widget "{}"'.format(label, name))
+        self.setText(f"{label} node widget '{name}'")
         self.view = node.view
         self.node_widget = self.view.get_widget(name)
         self.visible = visible
@@ -425,7 +425,7 @@ class PortLockedCmd(QtGui.QUndoCommand):
 
     def __init__(self, port):
         super().__init__()
-        self.setText('lock port "{}"'.format(port.name()))
+        self.setText(f"lock port '{port.name()}'")
         self.port = port
 
     def undo(self):
@@ -447,7 +447,7 @@ class PortUnlockedCmd(QtGui.QUndoCommand):
 
     def __init__(self, port):
         super().__init__()
-        self.setText('unlock port "{}"'.format(port.name()))
+        self.setText(f"unlock port '{port.name()}'")
         self.port = port
 
     def undo(self):
@@ -472,9 +472,9 @@ class PortVisibleCmd(QtGui.QUndoCommand):
         self.port = port
         self.visible = visible
         if visible:
-            self.setText("show port {}".format(self.port.name()))
+            self.setText(f"show port {self.port.name()}")
         else:
-            self.setText("hide port {}".format(self.port.name()))
+            self.setText(f"hide port {self.port.name()}")
 
     def set_visible(self, visible):
         self.port.model.visible = visible
@@ -491,7 +491,6 @@ class PortVisibleCmd(QtGui.QUndoCommand):
         node_view.draw_node()
 
         # redraw the connected pipes in the scene.
-        ports = node_view.inputs + node_view.outputs
         for port in node_view.inputs + node_view.outputs:
             for pipe in port.connected_pipes:
                 pipe.update()

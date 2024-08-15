@@ -36,9 +36,9 @@ class NodeGraphMenu(object):
         self._items = []
 
     def __repr__(self):
-        return '<{}("{}") object at {}>'.format(
-            self.__class__.__name__, self.name(), hex(id(self))
-        )
+        msg = f"{self.__class__.__name__}('{self.name()}')"
+        msg = f"<{msg} object at {hex(id(self))}>"
+        return msg
 
     @property
     def qmenu(self):
@@ -103,7 +103,7 @@ class NodeGraphMenu(object):
             NodeGraphQt.NodeGraphMenu: the appended menu item.
         """
         if name in self._menus:
-            raise NodeMenuError('menu object "{}" already exists!'.format(name))
+            raise NodeMenuError(f"menu object '{name}' already exists!")
         base_menu = BaseMenu(name, self.qmenu)
         self.qmenu.addMenu(base_menu)
         menu = NodeGraphMenu(self._graph, base_menu)
@@ -181,7 +181,7 @@ class NodesMenu(NodeGraphMenu):
     """
 
     def add_command(
-        self, name, func=None, node_type=None, node_class=None, shortcut=None
+        self, name, func=None, shortcut=None, node_type=None, node_class=None
     ):
         """
         Re-implemented to add a command to the specified node type menu.
@@ -253,9 +253,9 @@ class NodeGraphCommand(object):
         self._func = func
 
     def __repr__(self):
-        return '<{}("{}") object at {}>'.format(
-            self.__class__.__name__, self.name(), hex(id(self))
-        )
+        msg = f"{self.__class__.__name__}('{self.name()}')"
+        msg = f"<{msg} object at {hex(id(self))}>"
+        return msg
 
     @property
     def qaction(self):

@@ -3,15 +3,10 @@ from pathlib import Path
 
 from PySide6 import QtCore, QtWidgets
 
-from NodeGraphQt import (
-    NodeGraph,
-    PropertiesBinWidget,
-    NodesTreeWidget,
-    NodesPaletteWidget,
-)
+from NodeGraphQt import NodeGraph
 
 # import example nodes from the "nodes" sub-package
-from examples.nodes import basic_nodes, custom_ports_node, group_node, widget_nodes
+from examples.nodes import basic_nodes, custom_ports_node, widget_nodes
 
 BASE_PATH = Path(__file__).parent.resolve()
 
@@ -34,9 +29,7 @@ def main():
         [
             basic_nodes.BasicNodeA,
             basic_nodes.BasicNodeB,
-            basic_nodes.CircleNode,
             custom_ports_node.CustomPortsNode,
-            group_node.MyGroupNode,
             widget_nodes.DropdownMenuNode,
             widget_nodes.TextInputNode,
             widget_nodes.CheckboxNode,
@@ -74,12 +67,6 @@ def main():
         "nodes.widget.DropdownMenuNode", name="combobox node"
     )
 
-    # crete node with the circular design.
-    n_circle = graph.create_node("nodes.basic.CircleNode", name="circle node")
-
-    # create group node.
-    n_group = graph.create_node("nodes.group.MyGroupNode")
-
     # make node connections.
 
     # (connect nodes using the .set_output method)
@@ -87,7 +74,6 @@ def main():
     n_text_input.set_output(0, n_checkbox.input(0))
     n_text_input.set_output(0, n_combo_menu.input(0))
     # (connect nodes using the .set_input method)
-    n_group.set_input(0, n_custom_ports.output(1))
     n_basic_b.set_input(2, n_checkbox.output(0))
     n_basic_b.set_input(2, n_combo_menu.output(1))
     # (connect nodes using the .connect_to method from the port object)
@@ -105,39 +91,6 @@ def main():
     # fit nodes to the viewer.
     graph.clear_selection()
     graph.fit_to_selection()
-
-    # Custom builtin widgets from NodeGraphQt
-    # ---------------------------------------
-
-    # create a node properties bin widget.
-    properties_bin = PropertiesBinWidget(node_graph=graph)
-    properties_bin.setWindowFlags(QtCore.Qt.Tool)
-
-    # example show the node properties bin widget when a node is double-clicked.
-    def display_properties_bin(node):
-        if not properties_bin.isVisible():
-            properties_bin.show()
-
-    # wire function to "node_double_clicked" signal.
-    graph.node_double_clicked.connect(display_properties_bin)
-
-    # create a nodes tree widget.
-    nodes_tree = NodesTreeWidget(node_graph=graph)
-    nodes_tree.set_category_label("nodeGraphQt.nodes", "Builtin Nodes")
-    nodes_tree.set_category_label("nodes.custom.ports", "Custom Port Nodes")
-    nodes_tree.set_category_label("nodes.widget", "Widget Nodes")
-    nodes_tree.set_category_label("nodes.basic", "Basic Nodes")
-    nodes_tree.set_category_label("nodes.group", "Group Nodes")
-    # nodes_tree.show()
-
-    # create a node palette widget.
-    nodes_palette = NodesPaletteWidget(node_graph=graph)
-    nodes_palette.set_category_label("nodeGraphQt.nodes", "Builtin Nodes")
-    nodes_palette.set_category_label("nodes.custom.ports", "Custom Port Nodes")
-    nodes_palette.set_category_label("nodes.widget", "Widget Nodes")
-    nodes_palette.set_category_label("nodes.basic", "Basic Nodes")
-    nodes_palette.set_category_label("nodes.group", "Group Nodes")
-    # nodes_palette.show()
 
     app.exec()
 

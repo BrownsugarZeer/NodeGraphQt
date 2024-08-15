@@ -77,8 +77,8 @@ class BaseNode(NodeObject):
             value (object): property data (python built in types).
             push_undo (bool): register the command to the undo stack. (default: True)
         """
-        # prevent signals from causing a infinite loop.
-        if self.get_property(name) == value:
+        # prevent signals from causing an infinite loop.
+        if self.get_property(name) is value:
             return
 
         if name == "visible":
@@ -191,7 +191,7 @@ class BaseNode(NodeObject):
         self.create_property(
             widget.get_name(), widget.get_value(), widget_type=widget_type, tab=tab
         )
-        widget.value_changed.connect(lambda k, v: self.set_property(k, v))
+        widget.value_changed.connect(self.set_property)
         widget._node = self
         self.view.add_widget(widget)
         #: redraw node to address calls outside the "__init__" func.
@@ -224,7 +224,7 @@ class BaseNode(NodeObject):
         )
         widget = NodeComboBox(self.view, name, label, items)
         widget.setToolTip(tooltip or "")
-        widget.value_changed.connect(lambda k, v: self.set_property(k, v))
+        widget.value_changed.connect(self.set_property)
         self.view.add_widget(widget)
         #: redraw node to address calls outside the "__init__" func.
         self.view.draw_node()
@@ -258,7 +258,7 @@ class BaseNode(NodeObject):
         )
         widget = NodeLineEdit(self.view, name, label, text, placeholder_text)
         widget.setToolTip(tooltip or "")
-        widget.value_changed.connect(lambda k, v: self.set_property(k, v))
+        widget.value_changed.connect(self.set_property)
         self.view.add_widget(widget)
         #: redraw node to address calls outside the "__init__" func.
         self.view.draw_node()
@@ -292,7 +292,7 @@ class BaseNode(NodeObject):
         )
         widget = NodeCheckBox(self.view, name, label, text, state)
         widget.setToolTip(tooltip or "")
-        widget.value_changed.connect(lambda k, v: self.set_property(k, v))
+        widget.value_changed.connect(self.set_property)
         self.view.add_widget(widget)
         #: redraw node to address calls outside the "__init__" func.
         self.view.draw_node()
@@ -367,9 +367,7 @@ class BaseNode(NodeObject):
             NodeGraphQt.Port: the created port object.
         """
         if name in self.inputs().keys():
-            raise PortRegistrationError(
-                'port name "{}" already registered.'.format(name)
-            )
+            raise PortRegistrationError(f"port name '{name}' already registered.")
 
         port_args = [name, multi_input, display_name, locked]
         if painter_func and callable(painter_func):
@@ -418,9 +416,7 @@ class BaseNode(NodeObject):
             NodeGraphQt.Port: the created port object.
         """
         if name in self.outputs().keys():
-            raise PortRegistrationError(
-                'port name "{}" already registered.'.format(name)
-            )
+            raise PortRegistrationError(f"port name '{name}' already registered.")
 
         port_args = [name, multi_output, display_name, locked]
         if painter_func and callable(painter_func):
@@ -450,10 +446,10 @@ class BaseNode(NodeObject):
         Returns:
             NodeGraphQt.Port: node port.
         """
-        if type(port) is int:
+        if isinstance(port, int):
             if port < len(self._inputs):
                 return self._inputs[port]
-        elif type(port) is str:
+        elif isinstance(port, str):
             return self.inputs().get(port, None)
 
     def get_output(self, port):
@@ -466,10 +462,10 @@ class BaseNode(NodeObject):
         Returns:
             NodeGraphQt.Port: node port.
         """
-        if type(port) is int:
+        if isinstance(port, int):
             if port < len(self._outputs):
                 return self._outputs[port]
-        elif type(port) is str:
+        elif isinstance(port, str):
             return self.outputs().get(port, None)
 
     def delete_input(self, port):
@@ -492,8 +488,8 @@ class BaseNode(NodeObject):
                 return
         if not self.port_deletion_allowed():
             raise PortError(
-                'Port "{}" can\'t be deleted on this node because '
-                '"ports_removable" is not enabled.'.format(port.name())
+                f"Port '{port.name()}' can't be deleted on this node because "
+                f"'ports_removable' is not enabled."
             )
         if port.locked():
             raise PortError("Error: Can't delete a port that is locked!")
@@ -523,8 +519,8 @@ class BaseNode(NodeObject):
                 return
         if not self.port_deletion_allowed():
             raise PortError(
-                'Port "{}" can\'t be deleted on this node because '
-                '"ports_removable" is not enabled.'.format(port.name())
+                f"Port '{port.name()}' can't be deleted on this node because "
+                f"'ports_removable' is not enabled."
             )
         if port.locked():
             raise PortError("Error: Can't delete a port that is locked!")
@@ -611,24 +607,20 @@ class BaseNode(NodeObject):
         self._model.outputs = {}
         self._model.inputs = {}
 
-        [
+        for port in port_data["input_ports"]:
             self.add_input(
                 name=port["name"],
                 multi_input=port["multi_connection"],
                 display_name=port["display_name"],
                 locked=port.get("locked") or False,
             )
-            for port in port_data["input_ports"]
-        ]
-        [
+        for port in port_data["output_ports"]:
             self.add_output(
                 name=port["name"],
                 multi_output=port["multi_connection"],
                 display_name=port["display_name"],
                 locked=port.get("locked") or False,
             )
-            for port in port_data["output_ports"]
-        ]
         self._view.draw_node()
 
     def inputs(self):
@@ -846,7 +838,7 @@ class BaseNode(NodeObject):
         """
         ports = self._inputs + self._outputs
         if port not in ports:
-            raise PortError('Node does not contain port "{}"'.format(port))
+            raise PortError(f"Node does not contain port '{port}'")
 
         rejected_types = self.graph.model.port_reject_connection_types(
             node_type=self.type_, port_type=port.type_(), port_name=port.name()
@@ -887,3 +879,10 @@ class BaseNode(NodeObject):
             out_port (NodeGraphQt.Port): output port that was disconnected.
         """
         return
+
+    def loaded(self):
+        """
+        This method is run after deserializing the Node.
+        Useful for reconstructing custom widgets from properties.
+        """
+        pass

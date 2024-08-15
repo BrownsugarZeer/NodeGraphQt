@@ -94,9 +94,9 @@ class NodeObject(object):
         self._view.layout_direction = self._model.layout_direction
 
     def __repr__(self):
-        return '<{}("{}") object at {}>'.format(
-            self.__class__.__name__, self.NODE_NAME, hex(id(self))
-        )
+        msg = f"{self.__class__.__name__}('{self.NODE_NAME}')"
+        msg = f"<{msg} object at {hex(id(self))}>"
+        return msg
 
     @_ClassProperty
     def type_(cls):
@@ -401,7 +401,7 @@ class NodeObject(object):
         """
 
         # prevent signals from causing an infinite loop.
-        if self.get_property(name) == value:
+        if self.get_property(name) is value:
             return
 
         # prevent nodes from have the same name.
@@ -412,7 +412,7 @@ class NodeObject(object):
         if self.graph:
             undo_cmd = PropertyChangedCmd(self, name, value)
             if name == "name":
-                undo_cmd.setText('renamed "{}" to "{}"'.format(self.name(), value))
+                undo_cmd.setText(f"renamed '{self.name()}' to '{value}'")
             if push_undo:
                 undo_stack = self.graph.undo_stack()
                 undo_stack.push(undo_cmd)

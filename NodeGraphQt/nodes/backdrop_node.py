@@ -19,7 +19,7 @@ class BackdropNode(NodeObject):
     NODE_NAME = "Backdrop"
 
     def __init__(self, qgraphics_views=None):
-        super(BackdropNode, self).__init__(qgraphics_views or BackdropNodeItem)
+        super().__init__(qgraphics_views or BackdropNodeItem)
         # override base default color.
         self.model.color = (5, 129, 138, 255)
         self.create_property(
@@ -39,13 +39,13 @@ class BackdropNode(NodeObject):
             value (object): update value (optional)
         """
         if update_prop == "sizer_mouse_release":
-            self.graph.begin_undo('resized "{}"'.format(self.name()))
+            self.graph.begin_undo(f"resized '{self.name()}'")
             self.set_property("width", value["width"])
             self.set_property("height", value["height"])
             self.set_pos(*value["pos"])
             self.graph.end_undo()
         elif update_prop == "sizer_double_clicked":
-            self.graph.begin_undo('"{}" auto resize'.format(self.name()))
+            self.graph.begin_undo(f"'{self.name()}' auto resize")
             self.set_property("width", value["width"])
             self.set_property("height", value["height"])
             self.set_pos(*value["pos"])
@@ -55,7 +55,7 @@ class BackdropNode(NodeObject):
         """
         Auto resize the backdrop node to fit around the intersecting nodes.
         """
-        self.graph.begin_undo('"{}" auto resize'.format(self.name()))
+        self.graph.begin_undo(f"'{self.name()}' auto resize")
         size = self.view.calc_backdrop_size()
         self.set_property("width", size["width"])
         self.set_property("height", size["height"])
@@ -71,7 +71,7 @@ class BackdropNode(NodeObject):
         """
         if not nodes:
             return
-        self.graph.begin_undo('"{}" wrap nodes'.format(self.name()))
+        self.graph.begin_undo(f"'{self.name()}' wrap nodes")
         size = self.view.calc_backdrop_size([n.view for n in nodes])
         self.set_property("width", size["width"])
         self.set_property("height", size["height"])
