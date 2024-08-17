@@ -7,7 +7,7 @@ from NodeGraphQt.errors import NodeWidgetError
 class _NodeGroupBox(QtWidgets.QGroupBox):
 
     def __init__(self, label, parent=None):
-        super(_NodeGroupBox, self).__init__(parent)
+        super().__init__(parent)
         layout = QtWidgets.QVBoxLayout(self)
         layout.setSpacing(1)
         self.setTitle(label)
@@ -15,12 +15,14 @@ class _NodeGroupBox(QtWidgets.QGroupBox):
     def setTitle(self, text):
         margin = (0, 2, 0, 0) if text else (0, 0, 0, 0)
         self.layout().setContentsMargins(*margin)
-        super(_NodeGroupBox, self).setTitle(text)
+        super().setTitle(text)
 
     def setTitleAlign(self, align="center"):
         text_color = tuple(
             map(lambda i, j: i - j, (255, 255, 255), ViewerEnum.BACKGROUND_COLOR.value)
         )
+
+        text_color = ",".join(map(str, text_color))
         style_dict = {
             "QGroupBox": {
                 "background-color": "rgba(0, 0, 0, 0)",
@@ -34,7 +36,7 @@ class _NodeGroupBox(QtWidgets.QGroupBox):
             "QGroupBox::title": {
                 "subcontrol-origin": "margin",
                 "subcontrol-position": "top center",
-                "color": "rgba({0}, {1}, {2}, 100)".format(*text_color),
+                "color": f"rgba({text_color}, 100)",
                 "padding": "0px",
             },
         }

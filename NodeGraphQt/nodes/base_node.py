@@ -1,9 +1,16 @@
 from collections import OrderedDict
 
+from PySide6 import QtCore, QtSvgWidgets
+
 from NodeGraphQt.base.commands import NodeVisibleCmd, NodeWidgetVisibleCmd
 from NodeGraphQt.base.node import NodeObject
 from NodeGraphQt.base.port import Port
-from NodeGraphQt.constants import NodePropWidgetEnum, PortTypeEnum
+from NodeGraphQt.constants import (
+    NodePropWidgetEnum,
+    PortTypeEnum,
+    NodeEnum,
+    ICON_NODE_ADJUST,
+)
 from NodeGraphQt.errors import PortError, PortRegistrationError, NodeWidgetError
 from NodeGraphQt.qgraphics.node_base import NodeItem
 from NodeGraphQt.widgets.node_widgets import (

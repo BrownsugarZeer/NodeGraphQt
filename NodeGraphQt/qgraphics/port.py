@@ -31,10 +31,10 @@ class PortItem(QtWidgets.QGraphicsItem):
         self._locked = False
 
     def __str__(self):
-        return '{}.PortItem("{}")'.format(self.__module__, self.name)
+        return f"{self.__module__}.PortItem('{self.name}')"
 
     def __repr__(self):
-        return '{}.PortItem("{}")'.format(self.__module__, self.name)
+        return f"{self.__module__}.PortItem('{self.name}')"
 
     def boundingRect(self):
         return QtCore.QRectF(

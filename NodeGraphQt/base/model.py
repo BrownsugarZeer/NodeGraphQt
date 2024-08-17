@@ -78,10 +78,6 @@ class NodeModel(object):
         self.outputs = {}
         self.port_deletion_allowed = False
 
-        # GroupNode attrs.
-        # TODO: no longer used?
-        self.subgraph_session = {}
-
         # Custom
         self._custom_prop = {}
 
@@ -422,9 +418,6 @@ class NodeModel(object):
         if self.port_deletion_allowed:
             node_dict["input_ports"] = input_ports
             node_dict["output_ports"] = output_ports
-
-        if self.subgraph_session:
-            node_dict["subgraph_session"] = self.subgraph_session
 
         custom_props = node_dict.pop("_custom_prop", {})
         if custom_props:

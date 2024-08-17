@@ -6,58 +6,43 @@ from NodeGraphQt.constants import ViewerEnum
 class BaseMenu(QtWidgets.QMenu):
 
     def __init__(self, *args, **kwargs):
-        super(BaseMenu, self).__init__(*args, **kwargs)
-        # text_color = self.palette().text().color().getRgb()
+        super().__init__(*args, **kwargs)
+
         text_color = tuple(
             map(lambda i, j: i - j, (255, 255, 255), ViewerEnum.BACKGROUND_COLOR.value)
         )
         selected_color = self.palette().highlight().color().getRgb()
-        style_dict = {
-            "QMenu": {
-                "color": "rgb({0},{1},{2})".format(*text_color),
-                "background-color": "rgb({0},{1},{2})".format(
-                    *ViewerEnum.BACKGROUND_COLOR.value
-                ),
-                "border": "1px solid rgba({0},{1},{2},30)".format(*text_color),
-                "border-radius": "3px",
-            },
-            "QMenu::item": {
-                "padding": "5px 18px 2px",
-                "background-color": "transparent",
-            },
-            "QMenu::item:selected": {
-                "color": "rgb({0},{1},{2})".format(*text_color),
-                "background-color": "rgba({0},{1},{2},200)".format(*selected_color),
-            },
-            "QMenu::item:disabled": {
-                "color": "rgba({0},{1},{2},60)".format(*text_color),
-                "background-color": "rgba({0},{1},{2},200)".format(
-                    *ViewerEnum.BACKGROUND_COLOR.value
-                ),
-            },
-            "QMenu::separator": {
-                "height": "1px",
-                "background": "rgba({0},{1},{2}, 50)".format(*text_color),
-                "margin": "4px 8px",
-            },
-        }
-        stylesheet = ""
-        for css_class, css in style_dict.items():
-            style = "{} {{\n".format(css_class)
-            for elm_name, elm_val in css.items():
-                style += "  {}:{};\n".format(elm_name, elm_val)
-            style += "}\n"
-            stylesheet += style
+
+        text_color = ",".join(map(str, text_color))
+        selected_color = ",".join(map(str, selected_color[:-1]))
+        background_color = ",".join(map(str, ViewerEnum.BACKGROUND_COLOR.value))
+        stylesheet = f"""\
+        QMenu {{
+            color:rgb({text_color});
+            background-color:rgb({background_color});
+            border:1px solid rgba({text_color},30);
+            border-radius:3px;
+        }}
+        QMenu::item {{
+            padding:5px 18px 2px;
+            background-color:transparent;
+        }}
+        QMenu::item:selected {{
+            color:rgb({text_color});
+            background-color:rgba({selected_color},200);
+        }}
+        QMenu::item:disabled {{
+            color:rgba({text_color},60);
+            background-color:rgba({background_color},200);
+        }}
+        QMenu::separator {{
+            height:1px;
+            background:rgba({text_color},50);
+            margin:4px 8px;
+        }}"""
         self.setStyleSheet(stylesheet)
         self.node_class = None
         self.graph = None
-
-    # disable for issue #142
-    # def hideEvent(self, event):
-    #     super(BaseMenu, self).hideEvent(event)
-    #     for a in self.actions():
-    #         if hasattr(a, 'node_id'):
-    #             a.node_id = None
 
     def get_menu(self, name, node_id=None):
         for action in self.actions():
@@ -86,7 +71,7 @@ class GraphAction(QtGui.QAction):
     executed = QtCore.Signal(object)
 
     def __init__(self, *args, **kwargs):
-        super(GraphAction, self).__init__(*args, **kwargs)
+        super().__init__(*args, **kwargs)
         self.graph = None
         self.triggered.connect(self._on_triggered)
 
@@ -104,7 +89,7 @@ class NodeAction(GraphAction):
     executed = QtCore.Signal(object, object)
 
     def __init__(self, *args, **kwargs):
-        super(NodeAction, self).__init__(*args, **kwargs)
+        super().__init__(*args, **kwargs)
         self.node_id = None
 
     def _on_triggered(self):

@@ -21,6 +21,7 @@ BASE_PATH = os.path.dirname(os.path.abspath(__file__))
 ICON_PATH = os.path.join(BASE_PATH, "widgets", "icons")
 ICON_DOWN_ARROW = os.path.join(ICON_PATH, "down_arrow.png")
 ICON_NODE_BASE = os.path.join(ICON_PATH, "node_base.png")
+ICON_NODE_ADJUST = os.path.join(ICON_PATH, "node_adjust.png")
 
 # DRAW STACK ORDER
 Z_VAL_BACKDROP = -2
@@ -76,7 +77,7 @@ class ViewerEnum(Enum):
     """
 
     #: default background color for the node graph.
-    BACKGROUND_COLOR = (35, 35, 35)
+    BACKGROUND_COLOR = (1, 4, 9)
     #: style node graph background with no grid or dots.
     GRID_DISPLAY_NONE = 0
     #: style node graph background with dots.
@@ -86,7 +87,7 @@ class ViewerEnum(Enum):
     #: grid size when styled with grid lines.
     GRID_SIZE = 50
     #: grid line color.
-    GRID_COLOR = (45, 45, 45)
+    GRID_COLOR = (28, 28, 28)
 
 
 class ViewerNavEnum(Enum):
@@ -115,11 +116,13 @@ class NodeEnum(Enum):
     #: default node height.
     HEIGHT = 60
     #: default node icon size (WxH).
-    ICON_SIZE = 18
+    ICON_SIZE = 32
+    #: default node color.
+    ITEM_COLOR = (13, 17, 23)
     #: default node overlay color when selected.
-    SELECTED_COLOR = (255, 255, 255, 30)
+    SELECTED_COLOR = (255, 255, 255, 0)
     #: default node border color when selected.
-    SELECTED_BORDER_COLOR = (254, 207, 42, 255)
+    SELECTED_BORDER_COLOR = (31, 111, 235, 255)
 
 
 # ==================================== PORT ====================================
@@ -173,13 +176,13 @@ class PipeEnum(Enum):
     #: default width.
     WIDTH = 1.2
     #: default color.
-    COLOR = (175, 95, 30, 255)
+    COLOR = (128, 128, 128, 255)
     #: pipe color to a node when it's disabled.
     DISABLED_COLOR = (200, 60, 60, 255)
     #: pipe color when selected or mouse over.
-    ACTIVE_COLOR = (70, 255, 220, 255)
+    ACTIVE_COLOR = (31, 111, 235, 255)
     #: pipe color to a node when it's selected.
-    HIGHLIGHT_COLOR = (232, 184, 13, 255)
+    HIGHLIGHT_COLOR = (31, 111, 235, 255)
     #: draw connection as a line.
     DRAW_TYPE_DEFAULT = 0
     #: draw connection as dashed lines.

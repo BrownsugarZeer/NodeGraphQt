@@ -6,55 +6,45 @@ from NodeGraphQt.constants import NodeEnum, ViewerEnum, ViewerNavEnum
 class NodeGraphWidget(QtWidgets.QTabWidget):
 
     def __init__(self, parent=None):
-        super(NodeGraphWidget, self).__init__(parent)
+        super().__init__(parent)
         self.setTabsClosable(True)
         self.setTabBarAutoHide(True)
-        bg_color = QtGui.QColor(*ViewerEnum.BACKGROUND_COLOR.value).darker(120).getRgb()
-        text_color = tuple(map(lambda i, j: i - j, (255, 255, 255), bg_color))
-        style_dict = {
-            "QWidget": {
-                "background-color": "rgb({0},{1},{2})".format(
-                    *ViewerEnum.BACKGROUND_COLOR.value
-                ),
-            },
-            "QTabWidget::pane": {
-                "background": "rgb({0},{1},{2})".format(
-                    *ViewerEnum.BACKGROUND_COLOR.value
-                ),
-                "border": "0px",
-                "border-top": "0px solid rgb({0},{1},{2})".format(*bg_color),
-            },
-            "QTabBar::tab": {
-                "background": "rgb({0},{1},{2})".format(*bg_color),
-                "border": "0px solid black",
-                "color": "rgba({0},{1},{2},30)".format(*text_color),
-                "min-width": "10px",
-                "padding": "10px 20px",
-            },
-            "QTabBar::tab:selected": {
-                "color": "rgb({0},{1},{2})".format(*text_color),
-                "background": "rgb({0},{1},{2})".format(
-                    *ViewerNavEnum.BACKGROUND_COLOR.value
-                ),
-                "border-top": "1px solid rgb({0},{1},{2})".format(
-                    *NodeEnum.SELECTED_BORDER_COLOR.value
-                ),
-            },
-            "QTabBar::tab:hover": {
-                "color": "rgb({0},{1},{2})".format(*text_color),
-                "border-top": "1px solid rgb({0},{1},{2})".format(
-                    *NodeEnum.SELECTED_BORDER_COLOR.value
-                ),
-            },
-        }
-        stylesheet = ""
-        for css_class, css in style_dict.items():
-            style = "{} {{\n".format(css_class)
-            for elm_name, elm_val in css.items():
-                style += "  {}:{};\n".format(elm_name, elm_val)
-            style += "}\n"
-            stylesheet += style
-        self.setStyleSheet(stylesheet)
+        dark_viewer_color = (
+            QtGui.QColor(*ViewerEnum.BACKGROUND_COLOR.value).darker(120).getRgb()
+        )
+        text_color = tuple(map(lambda i, j: i - j, (255, 255, 255), dark_viewer_color))
+
+        text_color = ",".join(map(str, text_color))
+        dark_viewer_color = ",".join(map(str, dark_viewer_color[:-1]))
+        viewer_color = ",".join(map(str, ViewerEnum.BACKGROUND_COLOR.value))
+        viewer_nav_color = ",".join(map(str, ViewerNavEnum.BACKGROUND_COLOR.value))
+        selected_color = ",".join(map(str, NodeEnum.SELECTED_BORDER_COLOR.value))
+        _stylesheet = f"""\
+        QWidget {{
+            background-color: rgb({viewer_color});
+        }}
+        QTabWidget::pane {{
+            background: rgb({viewer_color});
+            border: 0px;
+            border-top: 0px solid rgb({dark_viewer_color});
+        }}
+        QTabBar::tab {{
+            background: rgb({dark_viewer_color});
+            border: 0px solid black;
+            color: rgba({text_color},30);
+            min-width: 10px;
+            padding: 10px 20px;
+        }}
+        QTabBar::tab:selected {{
+            color: rgb({text_color});
+            background: rgb({viewer_nav_color});
+            border-top: 1px solid rgb({selected_color});
+        }}
+        QTabBar::tab:hover {{
+            color: rgb({text_color});
+            border-top: 1px solid rgb({selected_color});
+        }}"""
+        self.setStyleSheet(_stylesheet)
 
     def add_viewer(self, viewer, name, node_id):
         self.addTab(viewer, name)
