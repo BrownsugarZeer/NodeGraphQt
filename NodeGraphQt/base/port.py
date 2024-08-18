@@ -1,3 +1,7 @@
+from typing import List, DefaultDict
+from collections import defaultdict
+from pydantic import BaseModel, ConfigDict, Field
+
 from NodeGraphQt.base.commands import (
     PortConnectedCmd,
     PortDisconnectedCmd,
@@ -7,9 +11,29 @@ from NodeGraphQt.base.commands import (
     NodeInputConnectedCmd,
     NodeInputDisconnectedCmd,
 )
-from NodeGraphQt.base.model import PortModel
+
+from NodeGraphQt.base.node import NodeObject
 from NodeGraphQt.constants import PortTypeEnum
 from NodeGraphQt.errors import PortError
+
+
+class PortModel(BaseModel):
+    """
+    Data dump for a port object.
+    """
+
+    node: NodeObject
+    dtype: str = ""
+    name: str = "port"
+    display_name: bool = True
+    multi_connection: bool = False
+    visible: bool = True
+    locked: bool = False
+    connected_ports: DefaultDict[str, List[str]] = Field(
+        default_factory=lambda: defaultdict(list)
+    )
+
+    model_config = ConfigDict(arbitrary_types_allowed=True)
 
 
 class Port(object):
@@ -32,7 +56,7 @@ class Port(object):
 
     def __init__(self, node, port):
         self.__view = port
-        self.__model = PortModel(node)
+        self.__model = PortModel(node=node)
 
     def __repr__(self):
         msg = f"{self.__class__.__name__}('{self.name()}')"
@@ -59,7 +83,7 @@ class Port(object):
         """
         return self.__model
 
-    def type_(self):
+    def dtype(self):
         """
         Returns the port type.
 
@@ -70,7 +94,7 @@ class Port(object):
         Returns:
             str: port connection type.
         """
-        return self.model.type_
+        return self.model.dtype
 
     def multi_connection(self):
         """
@@ -201,9 +225,9 @@ class Port(object):
         for node_id, port_names in self.model.connected_ports.items():
             for port_name in port_names:
                 node = graph.get_node_by_id(node_id)
-                if self.type_() == PortTypeEnum.IN.value:
+                if self.dtype() == PortTypeEnum.IN.value:
                     ports.append(node.outputs()[port_name])
-                elif self.type_() == PortTypeEnum.OUT.value:
+                elif self.dtype() == PortTypeEnum.OUT.value:
                     ports.append(node.inputs()[port_name])
         return ports
 
@@ -228,30 +252,30 @@ class Port(object):
             raise PortError(f"Can't connect port because '{name}' is locked.")
 
         # validate accept connection.
-        node_type = self.node().type_
+        node_type = self.node().dtype
         accepted_types = port.accepted_port_types().get(node_type)
         if accepted_types:
-            accepted_pnames = accepted_types.get(self.type_()) or set([])
+            accepted_pnames = accepted_types.get(self.dtype()) or set([])
             if self.name() not in accepted_pnames:
                 return
-        node_type = port.node().type_
+        node_type = port.node().dtype
         accepted_types = self.accepted_port_types().get(node_type)
         if accepted_types:
-            accepted_pnames = accepted_types.get(port.type_()) or set([])
+            accepted_pnames = accepted_types.get(port.dtype()) or set([])
             if port.name() not in accepted_pnames:
                 return
 
         # validate reject connection.
-        node_type = self.node().type_
+        node_type = self.node().dtype
         rejected_types = port.rejected_port_types().get(node_type)
         if rejected_types:
-            rejected_pnames = rejected_types.get(self.type_()) or set([])
+            rejected_pnames = rejected_types.get(self.dtype()) or set([])
             if self.name() in rejected_pnames:
                 return
-        node_type = port.node().type_
+        node_type = port.node().dtype
         rejected_types = self.rejected_port_types().get(node_type)
         if rejected_types:
-            rejected_pnames = rejected_types.get(port.type_()) or set([])
+            rejected_pnames = rejected_types.get(port.dtype()) or set([])
             if port.name() in rejected_pnames:
                 return
 

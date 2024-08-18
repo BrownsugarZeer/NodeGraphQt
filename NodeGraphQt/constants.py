@@ -118,7 +118,7 @@ class NodeEnum(Enum):
     #: default node icon size (WxH).
     ICON_SIZE = 32
     #: default node color.
-    ITEM_COLOR = (13, 17, 23)
+    ITEM_COLOR = (13, 17, 23, 255)
     #: default node overlay color when selected.
     SELECTED_COLOR = (255, 255, 255, 0)
     #: default node border color when selected.

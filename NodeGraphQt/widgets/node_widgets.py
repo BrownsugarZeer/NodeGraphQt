@@ -122,7 +122,7 @@ class NodeBaseWidget(QtWidgets.QGraphicsProxyWidget):
         self.value_changed.emit(self.get_name(), self.get_value())
 
     @property
-    def type_(self):
+    def dtype(self):
         """
         Returns the node widget type.
 
@@ -143,14 +143,14 @@ class NodeBaseWidget(QtWidgets.QGraphicsProxyWidget):
         """
         return self._node
 
-    def get_icon(self, name):
-        """
-        Returns the default icon from the Qt framework.
+    # def get_icon(self, name):
+    #     """
+    #     Returns the default icon from the Qt framework.
 
-        Returns:
-            str: icon name.
-        """
-        return self.style().standardIcon(QtWidgets.QStyle.StandardPixmap(name))
+    #     Returns:
+    #         str: icon name.
+    #     """
+    #     return self.style().standardIcon(QtWidgets.QStyle.StandardPixmap(name))
 
     def get_name(self):
         """
@@ -269,7 +269,7 @@ class NodeComboBox(NodeBaseWidget):
         self.set_custom_widget(combo)
 
     @property
-    def type_(self):
+    def dtype(self):
         return "ComboNodeWidget"
 
     def get_value(self):
@@ -364,7 +364,7 @@ class NodeLineEdit(NodeBaseWidget):
         self.widget().setMaximumWidth(140)
 
     @property
-    def type_(self):
+    def dtype(self):
         return "LineEditNodeWidget"
 
     def get_value(self):
@@ -429,7 +429,7 @@ class NodeCheckBox(NodeBaseWidget):
         self.widget().setMaximumWidth(140)
 
     @property
-    def type_(self):
+    def dtype(self):
         return "CheckboxNodeWidget"
 
     def get_value(self):

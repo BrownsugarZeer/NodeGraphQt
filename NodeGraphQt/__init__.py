@@ -58,6 +58,10 @@ from .nodes.backdrop_node import BackdropNode
 # widgets
 from .widgets.node_widgets import NodeBaseWidget
 
+from icecream import install
+
+install()
+
 __version__ = VERSION
 __all__ = [
     "BackdropNode",

@@ -371,7 +371,7 @@ class NodeViewer(QtWidgets.QGraphicsView):
             nodes = [i for i in items if isinstance(i, AbstractNodeItem)]
             if nodes:
                 node = nodes[0]
-                ctx_menu = ctx_menus["nodes"].get_menu(node.type_, node.id)
+                ctx_menu = ctx_menus["nodes"].get_menu(node.dtype, node.id)
                 if ctx_menu:
                     for action in ctx_menu.actions():
                         if not action.menu():
@@ -939,9 +939,9 @@ class NodeViewer(QtWidgets.QGraphicsView):
         from_ptype = from_port.port_type
 
         # validate the start.
-        from_data = self.accept_connection_types.get(from_port.node.type_) or {}
+        from_data = self.accept_connection_types.get(from_port.node.dtype) or {}
         constraints = from_data.get(from_ptype, {}).get(from_port.name, {})
-        accept_data = constraints.get(to_port.node.type_, {})
+        accept_data = constraints.get(to_port.node.dtype, {})
         accepted_pnames = accept_data.get(to_ptype, {})
         if constraints:
             if to_port.name in accepted_pnames:
@@ -950,9 +950,9 @@ class NodeViewer(QtWidgets.QGraphicsView):
                 accept_validation.append(False)
 
         # validate the end.
-        to_data = self.accept_connection_types.get(to_port.node.type_) or {}
+        to_data = self.accept_connection_types.get(to_port.node.dtype) or {}
         constraints = to_data.get(to_ptype, {}).get(to_port.name, {})
-        accept_data = constraints.get(from_port.node.type_, {})
+        accept_data = constraints.get(from_port.node.dtype, {})
         accepted_pnames = accept_data.get(from_ptype, {})
         if constraints:
             if from_port.name in accepted_pnames:
@@ -979,9 +979,9 @@ class NodeViewer(QtWidgets.QGraphicsView):
         to_ptype = to_port.port_type
         from_ptype = from_port.port_type
 
-        to_data = self.reject_connection_types.get(to_port.node.type_) or {}
+        to_data = self.reject_connection_types.get(to_port.node.dtype) or {}
         constraints = to_data.get(to_ptype, {}).get(to_port.name, {})
-        reject_data = constraints.get(from_port.node.type_, {})
+        reject_data = constraints.get(from_port.node.dtype, {})
 
         rejected_pnames = reject_data.get(from_ptype)
         if rejected_pnames:
@@ -989,9 +989,9 @@ class NodeViewer(QtWidgets.QGraphicsView):
                 return True
             return False
 
-        from_data = self.reject_connection_types.get(from_port.node.type_) or {}
+        from_data = self.reject_connection_types.get(from_port.node.dtype) or {}
         constraints = from_data.get(from_ptype, {}).get(from_port.name, {})
-        reject_data = constraints.get(to_port.node.type_, {})
+        reject_data = constraints.get(to_port.node.dtype, {})
 
         rejected_pnames = reject_data.get(to_ptype)
         if rejected_pnames:

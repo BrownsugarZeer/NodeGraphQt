@@ -2,6 +2,7 @@ import json
 import os
 import re
 from pathlib import Path
+from typing import List
 
 from PySide6 import QtCore, QtWidgets, QtGui
 
@@ -30,6 +31,7 @@ from NodeGraphQt.nodes.backdrop_node import BackdropNode
 from NodeGraphQt.nodes.base_node import BaseNode
 from NodeGraphQt.widgets.node_graph import NodeGraphWidget
 from NodeGraphQt.widgets.viewer import NodeViewer
+from icecream import ic
 
 
 class NodeGraph(QtCore.QObject):
@@ -379,7 +381,8 @@ class NodeGraph(QtCore.QObject):
         self._undo_stack.beginMacro("move nodes")
         for node_view, prev_pos in node_data.items():
             node = self._model.nodes[node_view.id]
-            self._undo_stack.push(NodeMovedCmd(node, node.pos(), prev_pos))
+            # TODO: n.x_pos(), n.y_pos() -> n.view.xy_pos
+            self._undo_stack.push(NodeMovedCmd(node, node.view.xy_pos, prev_pos))
         self._undo_stack.endMacro()
 
     def _on_node_backdrop_updated(self, node_id, update_property, value):
@@ -1184,24 +1187,25 @@ class NodeGraph(QtCore.QObject):
         Returns:
             BaseNode: the created instance of the node.
         """
-        node = self._node_factory.create_node_instance(node_type)
+        node: NodeObject = self._node_factory.create_node_instance(node_type)
+
         if node:
             node._graph = self
             node.model._graph_model = self.model
 
-            wid_types = node.model.__dict__.pop("_TEMP_property_widget_types")
-            prop_attrs = node.model.__dict__.pop("_TEMP_property_attrs")
+            wid_types = node.model._TEMP_property_widget_types
+            prop_attrs = node.model._TEMP_property_attrs
 
-            if self.model.get_node_common_properties(node.type_) is None:
+            if self.model.get_node_common_properties(node.dtype) is None:
                 node_attrs = {
-                    node.type_: {n: {"widget_type": wt} for n, wt in wid_types.items()}
+                    node.dtype: {n: {"widget_type": wt} for n, wt in wid_types.items()}
                 }
                 for pname, pattrs in prop_attrs.items():
-                    node_attrs[node.type_][pname].update(pattrs)
+                    node_attrs[node.dtype][pname].update(pattrs)
                 self.model.set_node_common_properties(node_attrs)
 
-            accept_types = node.model.__dict__.pop("_TEMP_accept_connection_types")
-            for ptype, pdata in accept_types.get(node.type_, {}).items():
+            accept_types = node.model._TEMP_accept_connection_types
+            for ptype, pdata in accept_types.get(node.dtype, {}).items():
                 for pname, accept_data in pdata.items():
                     for accept_ntype, accept_ndata in accept_data.items():
                         for accept_ptype, accept_pnames in accept_ndata.items():
@@ -1209,13 +1213,14 @@ class NodeGraph(QtCore.QObject):
                                 self._model.add_port_accept_connection_type(
                                     port_name=pname,
                                     port_type=ptype,
-                                    node_type=node.type_,
+                                    node_type=node.dtype,
                                     accept_pname=accept_pname,
                                     accept_ptype=accept_ptype,
                                     accept_ntype=accept_ntype,
                                 )
-            reject_types = node.model.__dict__.pop("_TEMP_reject_connection_types")
-            for ptype, pdata in reject_types.get(node.type_, {}).items():
+
+            reject_types = node.model._TEMP_reject_connection_types
+            for ptype, pdata in reject_types.get(node.dtype, {}).items():
                 for pname, reject_data in pdata.items():
                     for reject_ntype, reject_ndata in reject_data.items():
                         for reject_ptype, reject_pnames in reject_ndata.items():
@@ -1223,7 +1228,7 @@ class NodeGraph(QtCore.QObject):
                                 self._model.add_port_reject_connection_type(
                                     port_name=pname,
                                     port_type=ptype,
-                                    node_type=node.type_,
+                                    node_type=node.dtype,
                                     reject_pname=reject_pname,
                                     reject_ptype=reject_ptype,
                                     reject_ntype=reject_ntype,
@@ -1253,7 +1258,7 @@ class NodeGraph(QtCore.QObject):
 
             undo_cmd = NodeAddedCmd(self, node, pos=node.model.pos, emit_signal=True)
             if push_undo:
-                undo_label = 'create node: "{}"'.format(node.NODE_NAME)
+                undo_label = f"create node: '{node.NODE_NAME}'"
                 self._undo_stack.beginMacro(undo_label)
                 for n in self.selected_nodes():
                     n.set_property("selected", False, push_undo=True)
@@ -1266,7 +1271,7 @@ class NodeGraph(QtCore.QObject):
 
             return node
 
-        raise NodeCreationError('Can\'t find node: "{}"'.format(node_type))
+        raise NodeCreationError(f"Can't find node: '{node_type}'")
 
     def add_node(self, node, pos=None, selected=True, push_undo=True):
         """
@@ -1282,19 +1287,19 @@ class NodeGraph(QtCore.QObject):
         """
         assert isinstance(node, NodeObject), "node must be a Node instance."
 
-        wid_types = node.model.__dict__.pop("_TEMP_property_widget_types")
-        prop_attrs = node.model.__dict__.pop("_TEMP_property_attrs")
+        wid_types = node.model._TEMP_property_widget_types
+        prop_attrs = node.model._TEMP_property_attrs
 
-        if self.model.get_node_common_properties(node.type_) is None:
+        if self.model.get_node_common_properties(node.dtype) is None:
             node_attrs = {
-                node.type_: {n: {"widget_type": wt} for n, wt in wid_types.items()}
+                node.dtype: {n: {"widget_type": wt} for n, wt in wid_types.items()}
             }
             for pname, pattrs in prop_attrs.items():
-                node_attrs[node.type_][pname].update(pattrs)
+                node_attrs[node.dtype][pname].update(pattrs)
             self.model.set_node_common_properties(node_attrs)
 
-        accept_types = node.model.__dict__.pop("_TEMP_accept_connection_types")
-        for ptype, pdata in accept_types.get(node.type_, {}).items():
+        accept_types = node.model._TEMP_accept_connection_types
+        for ptype, pdata in accept_types.get(node.dtype, {}).items():
             for pname, accept_data in pdata.items():
                 for accept_ntype, accept_ndata in accept_data.items():
                     for accept_ptype, accept_pnames in accept_ndata.items():
@@ -1302,13 +1307,14 @@ class NodeGraph(QtCore.QObject):
                             self._model.add_port_accept_connection_type(
                                 port_name=pname,
                                 port_type=ptype,
-                                node_type=node.type_,
+                                node_type=node.dtype,
                                 accept_pname=accept_pname,
                                 accept_ptype=accept_ptype,
                                 accept_ntype=accept_ntype,
                             )
-        reject_types = node.model.__dict__.pop("_TEMP_reject_connection_types")
-        for ptype, pdata in reject_types.get(node.type_, {}).items():
+
+        reject_types = node.model._TEMP_reject_connection_types
+        for ptype, pdata in reject_types.get(node.dtype, {}).items():
             for pname, reject_data in pdata.items():
                 for reject_ntype, reject_ndata in reject_data.items():
                     for reject_ptype, reject_pnames in reject_ndata.items():
@@ -1316,7 +1322,7 @@ class NodeGraph(QtCore.QObject):
                             self._model.add_port_reject_connection_type(
                                 port_name=pname,
                                 port_type=ptype,
-                                node_type=node.type_,
+                                node_type=node.dtype,
                                 reject_pname=reject_pname,
                                 reject_ptype=reject_ptype,
                                 reject_ntype=reject_ntype,
@@ -1335,10 +1341,12 @@ class NodeGraph(QtCore.QObject):
 
         undo_cmd = NodeAddedCmd(self, node, pos=pos, emit_signal=False)
         if push_undo:
-            self._undo_stack.beginMacro(f"add node: `{node.name()}`")
+            # TODO: node.name() -> node.view.name
+            self._undo_stack.beginMacro(f"add node: '{node.view.name}'")
             self._undo_stack.push(undo_cmd)
             if selected:
-                node.set_selected(True)
+                # TODO: node.set_selected() -> node.view.selected
+                node.view.selected = True
             self._undo_stack.endMacro()
         else:
             undo_cmd.redo()
@@ -1354,7 +1362,8 @@ class NodeGraph(QtCore.QObject):
         assert isinstance(node, NodeObject), "node must be a instance of a NodeObject."
 
         if push_undo:
-            self._undo_stack.beginMacro(f"delete node: `{node.name()}`")
+            # TODO: node.name() -> node.view.name
+            self._undo_stack.beginMacro(f"delete node: '{node.view.name}'")
 
         if isinstance(node, BaseNode):
             for p in node.input_ports():
@@ -1388,7 +1397,8 @@ class NodeGraph(QtCore.QObject):
         assert isinstance(node, NodeObject), "node must be a Node instance."
 
         if push_undo:
-            self._undo_stack.beginMacro('delete node: "{}"'.format(node.name()))
+            # TODO: node.name() -> node.view.name
+            self._undo_stack.beginMacro(f"delete node: '{node.view.name}'")
 
         if isinstance(node, BaseNode):
             for p in node.input_ports():
@@ -1422,7 +1432,7 @@ class NodeGraph(QtCore.QObject):
             return
         node_ids = [n.id for n in nodes]
         if push_undo:
-            self._undo_stack.beginMacro('deleted "{}" node(s)'.format(len(nodes)))
+            self._undo_stack.beginMacro(f"deleted '{len(nodes)}' node(s)")
         for node in nodes:
 
             if isinstance(node, BaseNode):
@@ -1490,7 +1500,7 @@ class NodeGraph(QtCore.QObject):
         if push_undo:
             self._undo_stack.endMacro()
 
-    def all_nodes(self):
+    def all_nodes(self) -> List[BaseNode]:
         """
         Return all nodes in the node graph.
 
@@ -1518,7 +1528,8 @@ class NodeGraph(QtCore.QObject):
         """
         self._undo_stack.beginMacro("select all")
         for node in self.all_nodes():
-            node.set_selected(True)
+            # TODO: node.set_selected() -> node.view.selected
+            node.view.selected = True
         self._undo_stack.endMacro()
 
     def clear_selection(self):
@@ -1527,7 +1538,8 @@ class NodeGraph(QtCore.QObject):
         """
         self._undo_stack.beginMacro("clear selection")
         for node in self.all_nodes():
-            node.set_selected(False)
+            # TODO: node.set_selected() -> node.view.selected
+            node.view.selected = False
         self._undo_stack.endMacro()
 
     def invert_selection(self):
@@ -1539,7 +1551,8 @@ class NodeGraph(QtCore.QObject):
             return
         self._undo_stack.beginMacro("invert selection")
         for node in self.all_nodes():
-            node.set_selected(not node.selected())
+            # TODO: node.set_selected() -> node.view.selected
+            node.view.selected = not node.selected()
         self._undo_stack.endMacro()
 
     def get_node_by_id(self, node_id=None):
@@ -1564,13 +1577,14 @@ class NodeGraph(QtCore.QObject):
             NodeGraphQt.NodeObject: node object.
         """
         for node in self._model.nodes.values():
-            if node.name() == name:
+            # TODO: node.name() -> node.view.name
+            if node.view.name == name:
                 return node
 
     def get_nodes_by_type(self, node_type):
         """
         Return all nodes by their node type identifier.
-        (see: :attr:`NodeGraphQt.NodeObject.type_`)
+        (see: :attr:`NodeGraphQt.NodeObject.dtype`)
 
         Args:
             node_type (str): node type identifier.
@@ -1578,7 +1592,7 @@ class NodeGraph(QtCore.QObject):
         Returns:
             list[NodeGraphQt.NodeObject]: list of nodes.
         """
-        return [n for n in self._model.nodes.values() if n.type_ == node_type]
+        return [n for n in self._model.nodes.values() if n.dtype == node_type]
 
     def get_unique_name(self, name):
         """
@@ -1591,7 +1605,8 @@ class NodeGraph(QtCore.QObject):
             str: unique node name.
         """
         name = " ".join(name.split())
-        node_names = [n.name() for n in self.all_nodes()]
+        # TODO: n.name() -> n.view.name
+        node_names = [n.view.name for n in self.all_nodes()]
         if name not in node_names:
             return name
 
@@ -1599,14 +1614,14 @@ class NodeGraph(QtCore.QObject):
         search = regex.search(name)
         if not search:
             for x in range(1, len(node_names) + 2):
-                new_name = "{} {}".format(name, x)
+                new_name = f"{name} {x}"
                 if new_name not in node_names:
                     return new_name
 
         version = search.group(1)
         name = name[: len(version) * -1].strip()
         for x in range(1, len(node_names) + 2):
-            new_name = "{} {}".format(name, x)
+            new_name = f"{name} {x}"
             if new_name not in node_names:
                 return new_name
 
@@ -1742,7 +1757,7 @@ class NodeGraph(QtCore.QObject):
         # build the nodes.
         nodes = {}
         for n_id, n_data in data.get("nodes", {}).items():
-            identifier = n_data["type_"]
+            identifier = n_data["dtype"]
             node = self._node_factory.create_node_instance(identifier)
             if node:
                 node.NODE_NAME = n_data.get("name", node.NODE_NAME)
@@ -1856,6 +1871,7 @@ class NodeGraph(QtCore.QObject):
         Args:
             file_path (str): path to the saved node layout.
         """
+        # TODO: serialized_data["node"]["dtype"] is not serializable.
         serialized_data = self.serialize_session()
         file_path = file_path.strip()
 
@@ -1890,7 +1906,7 @@ class NodeGraph(QtCore.QObject):
         """
         file_path = file_path.strip()
         if not os.path.isfile(file_path):
-            raise IOError("file does not exist: {}".format(file_path))
+            raise IOError(f"file does not exist: {file_path}")
 
         self.clear_session()
         self.import_session(file_path, clear_undo_stack=True)
@@ -2000,8 +2016,9 @@ class NodeGraph(QtCore.QObject):
         self._undo_stack.beginMacro("pasted nodes")
         self.clear_selection()
         nodes = self._deserialize(serial_data, relative_pos=True)
-        for n in nodes:
-            n.set_selected(True)
+        for node in nodes:
+            # TODO: node.set_selected() -> node.view.selected
+            node.view.selected = True
         self._undo_stack.endMacro()
         return nodes
 
@@ -2024,8 +2041,10 @@ class NodeGraph(QtCore.QObject):
         new_nodes = self._deserialize(serial)
         offset = 50
         for n in new_nodes:
-            x, y = n.pos()
-            n.set_pos(x + offset, y + offset)
+            # TODO: n.x_pos(), n.y_pos() -> n.view.xy_pos
+            # TODO: n.set_pos() -> n.view.set_xy_pos
+            x_pos, y_pos = n.view.xy_pos
+            n.view.set_xy_pos = (x_pos + offset, y_pos + offset)
             n.set_property("selected", True)
 
         self._undo_stack.endMacro()
@@ -2053,7 +2072,7 @@ class NodeGraph(QtCore.QObject):
 
         if mode is not None:
             states = {False: "enable", True: "disable"}
-            text = "{} ({}) nodes".format(states[mode], len(nodes))
+            text = f"{states[mode]} ({len(nodes)}) nodes"
             self._undo_stack.beginMacro(text)
             for n in nodes:
                 n.set_disabled(mode)
@@ -2064,9 +2083,9 @@ class NodeGraph(QtCore.QObject):
         enabled_count = len([n for n in nodes if n.disabled()])
         disabled_count = len([n for n in nodes if not n.disabled()])
         if enabled_count > 0:
-            text.append("enabled ({})".format(enabled_count))
+            text.append(f"enabled ({enabled_count})")
         if disabled_count > 0:
-            text.append("disabled ({})".format(disabled_count))
+            text.append(f"disabled ({disabled_count})")
         text = " / ".join(text) + " nodes"
 
         self._undo_stack.beginMacro(text)
@@ -2191,7 +2210,8 @@ class NodeGraph(QtCore.QObject):
                 for idx, node in enumerate(ranked_nodes):
                     dy = max(node_height, node.view.height)
                     current_y += 0 if idx == 0 else dy
-                    node.set_pos(current_x, current_y)
+                    # TODO: self.set_pos() -> self.view.xy_pos
+                    node.view.xy_pos = (current_x, current_y)
                     current_y += dy * 0.5 + 10
 
                 current_x += max_width * 0.3
@@ -2206,7 +2226,8 @@ class NodeGraph(QtCore.QObject):
                 for idx, node in enumerate(ranked_nodes):
                     dx = max(node_width, node.view.width)
                     current_x += 0 if idx == 0 else dx
-                    node.set_pos(current_x, current_y)
+                    # TODO: self.set_pos() -> self.view.xy_pos
+                    node.view.xy_pos = (current_x, current_y)
                     current_x += dx * 0.5 + 10
 
                 current_y += max_height * 0.3
@@ -2216,7 +2237,10 @@ class NodeGraph(QtCore.QObject):
         dy = nodes_center_0[1] - nodes_center_1[1]
 
         for n in nodes:
-            n.set_pos(n.x_pos() + dx, n.y_pos() + dy)
+            # TODO: n.x_pos(), n.y_pos() -> n.view.xy_pos
+            # TODO: self.set_pos() -> self.view.xy_pos
+            x_pos, y_pos = n.view.xy_pos
+            n.view.xy_pos = (x_pos + dx, y_pos + dy)
 
         # wrap the backdrop nodes.
         for backdrop, contained_nodes in backdrops.items():

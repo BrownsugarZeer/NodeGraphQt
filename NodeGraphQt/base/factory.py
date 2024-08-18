@@ -1,4 +1,7 @@
+from typing import Optional
+
 from NodeGraphQt.errors import NodeRegistrationError
+from NodeGraphQt.base.node import NodeObject
 
 
 class NodeFactory(object):
@@ -58,7 +61,11 @@ class NodeFactory(object):
         if _NodeClass:
             return _NodeClass()
 
-    def register_node(self, node, alias=None):
+    def register_node(
+        self,
+        node: NodeObject,
+        alias: Optional[str] = None,
+    ):
         """
         register the node.
 
@@ -70,7 +77,7 @@ class NodeFactory(object):
             return
 
         name = node.NODE_NAME
-        node_type = node.type_
+        node_type = node.dtype()
 
         if self.__nodes.get(node_type):
             raise NodeRegistrationError(

@@ -24,10 +24,9 @@ class AbstractNodeItem(QtWidgets.QGraphicsItem):
         self._properties = {
             "id": None,
             "name": name.strip(),
-            "color": (13, 18, 23, 255),
             "border_color": (46, 57, 66, 255),
             "text_color": (255, 255, 255, 180),
-            "type_": "AbstractBaseNode",
+            "dtype": "AbstractBaseNode",
             "selected": False,
             "disabled": False,
             "visible": False,
@@ -94,12 +93,12 @@ class AbstractNodeItem(QtWidgets.QGraphicsItem):
         self._properties["id"] = unique_id
 
     @property
-    def type_(self):
-        return self._properties["type_"]
+    def dtype(self):
+        return self._properties["dtype"]
 
-    @type_.setter
-    def type_(self, node_type="NODE"):
-        self._properties["type_"] = node_type
+    @dtype.setter
+    def dtype(self, node_type="NODE"):
+        self._properties["dtype"] = node_type
 
     @property
     def layout_direction(self):
@@ -128,14 +127,6 @@ class AbstractNodeItem(QtWidgets.QGraphicsItem):
     @height.setter
     def height(self, height=0.0):
         self._height = height
-
-    @property
-    def color(self):
-        return self._properties["color"]
-
-    @color.setter
-    def color(self, color=(0, 0, 0, 255)):
-        self._properties["color"] = color
 
     @property
     def text_color(self):
@@ -212,7 +203,7 @@ class AbstractNodeItem(QtWidgets.QGraphicsItem):
     @name.setter
     def name(self, name=""):
         self._properties["name"] = name
-        self.setToolTip("node: {}".format(name))
+        self.setToolTip(f"node: {name}")
 
     @property
     def properties(self):

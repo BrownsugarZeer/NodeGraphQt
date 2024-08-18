@@ -12,7 +12,9 @@ class NodeGraphWidget(QtWidgets.QTabWidget):
         dark_viewer_color = (
             QtGui.QColor(*ViewerEnum.BACKGROUND_COLOR.value).darker(120).getRgb()
         )
-        text_color = tuple(map(lambda i, j: i - j, (255, 255, 255), dark_viewer_color))
+        text_color = tuple(
+            map(lambda i, j: i - j, (255, 255, 255), dark_viewer_color[:-1])
+        )
 
         text_color = ",".join(map(str, text_color))
         dark_viewer_color = ",".join(map(str, dark_viewer_color[:-1]))
@@ -38,11 +40,11 @@ class NodeGraphWidget(QtWidgets.QTabWidget):
         QTabBar::tab:selected {{
             color: rgb({text_color});
             background: rgb({viewer_nav_color});
-            border-top: 1px solid rgb({selected_color});
+            border-top: 1px solid rgba({selected_color});
         }}
         QTabBar::tab:hover {{
             color: rgb({text_color});
-            border-top: 1px solid rgb({selected_color});
+            border-top: 1px solid rgba({selected_color});
         }}"""
         self.setStyleSheet(_stylesheet)
 

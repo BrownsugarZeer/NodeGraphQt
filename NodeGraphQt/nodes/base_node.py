@@ -2,7 +2,11 @@ from collections import OrderedDict
 
 from PySide6 import QtCore, QtSvgWidgets
 
-from NodeGraphQt.base.commands import NodeVisibleCmd, NodeWidgetVisibleCmd
+from NodeGraphQt.base.commands import (
+    NodeVisibleCmd,
+    NodeWidgetVisibleCmd,
+    PropertyChangedCmd,
+)
 from NodeGraphQt.base.node import NodeObject
 from NodeGraphQt.base.port import Port
 from NodeGraphQt.constants import (
@@ -12,13 +16,14 @@ from NodeGraphQt.constants import (
     ICON_NODE_ADJUST,
 )
 from NodeGraphQt.errors import PortError, PortRegistrationError, NodeWidgetError
-from NodeGraphQt.qgraphics.node_base import NodeItem
+
 from NodeGraphQt.widgets.node_widgets import (
     NodeBaseWidget,
     NodeCheckBox,
     NodeComboBox,
     NodeLineEdit,
 )
+from icecream import ic
 
 
 class BaseNode(NodeObject):
@@ -58,8 +63,8 @@ class BaseNode(NodeObject):
 
     NODE_NAME = "Node"
 
-    def __init__(self, qgraphics_item=None):
-        super(BaseNode, self).__init__(qgraphics_item or NodeItem)
+    def __init__(self):
+        super().__init__()
         self._inputs = []
         self._outputs = []
 
@@ -79,13 +84,17 @@ class BaseNode(NodeObject):
         """
         Set the value on the node custom property.
 
+        Note:
+            When setting the node ``"name"`` property a new unique name will be
+            used if another node in the graph has the same node name.
+
         Args:
             name (str): name of the property.
             value (object): property data (python built in types).
             push_undo (bool): register the command to the undo stack. (default: True)
         """
         # prevent signals from causing an infinite loop.
-        if self.get_property(name) is value:
+        if self.model.get_property(name) is value:
             return
 
         if name == "visible":
@@ -102,7 +111,27 @@ class BaseNode(NodeObject):
             for port in ports:
                 for pipe in port.connected_pipes:
                     pipe.update()
-        super(BaseNode, self).set_property(name, value, push_undo)
+
+        # super(BaseNode, self).set_property(name, value, push_undo)
+        # prevent nodes from have the same name.
+        if self.graph:
+            if name == "name":
+                value = self.graph.get_unique_name(value)
+                self.NODE_NAME = value
+
+            undo_cmd = PropertyChangedCmd(self, name, value)
+            if name == "name":
+                # TODO: self.name() -> self.view.name
+                undo_cmd.setText(f"renamed '{self.view.name}' to '{value}'")
+            if push_undo:
+                undo_stack = self.graph.undo_stack()
+                undo_stack.push(undo_cmd)
+            else:
+                undo_cmd.redo()
+
+        # redraw the node for custom properties.
+        if self.model.is_custom_property(name):
+            self.view.draw_node()
 
     def set_layout_direction(self, value=0):
         """
@@ -123,27 +152,10 @@ class BaseNode(NodeObject):
             value (int): layout direction mode.
         """
         # base logic to update the model and view attributes only.
-        super(BaseNode, self).set_layout_direction(value)
+        # TODO: set_layout_direction() -> view.layout_direction
+        self.view.layout_direction = value
         # redraw the node.
         self._view.draw_node()
-
-    def set_icon(self, icon=None):
-        """
-        Set the node icon.
-
-        Args:
-            icon (str): path to the icon image.
-        """
-        self.set_property("icon", icon)
-
-    def icon(self):
-        """
-        Node icon path.
-
-        Returns:
-            str: icon image file path.
-        """
-        return self.model.icon
 
     def widgets(self):
         """
@@ -195,8 +207,11 @@ class BaseNode(NodeObject):
             raise NodeWidgetError("'widget' must be an instance of a NodeBaseWidget")
 
         widget_type = widget_type or NodePropWidgetEnum.HIDDEN.value
-        self.create_property(
-            widget.get_name(), widget.get_value(), widget_type=widget_type, tab=tab
+        self.model.add_property(
+            widget.get_name(),
+            widget.get_value(),
+            widget_type=widget_type,
+            tab=tab,
         )
         widget.value_changed.connect(self.set_property)
         widget._node = self
@@ -206,7 +221,7 @@ class BaseNode(NodeObject):
 
     def add_combo_menu(self, name, label="", items=None, tooltip=None, tab=None):
         """
-        Creates a custom property with the :meth:`NodeObject.create_property`
+        Creates a custom property with the :meth:`NodeObject.add_property`
         function and embeds a :class:`PySide2.QtWidgets.QComboBox` widget
         into the node.
 
@@ -221,7 +236,7 @@ class BaseNode(NodeObject):
             tooltip (str): widget tooltip.
             tab (str): name of the widget tab to display in.
         """
-        self.create_property(
+        self.model.add_property(
             name,
             value=items[0] if items else None,
             items=items or [],
@@ -240,7 +255,7 @@ class BaseNode(NodeObject):
         self, name, label="", text="", placeholder_text="", tooltip=None, tab=None
     ):
         """
-        Creates a custom property with the :meth:`NodeObject.create_property`
+        Creates a custom property with the :meth:`NodeObject.add_property`
         function and embeds a :class:`PySide2.QtWidgets.QLineEdit` widget
         into the node.
 
@@ -256,7 +271,7 @@ class BaseNode(NodeObject):
             tooltip (str): widget tooltip.
             tab (str): name of the widget tab to display in.
         """
-        self.create_property(
+        self.model.add_property(
             name,
             value=text,
             widget_type=NodePropWidgetEnum.QLINE_EDIT.value,
@@ -274,7 +289,7 @@ class BaseNode(NodeObject):
         self, name, label="", text="", state=False, tooltip=None, tab=None
     ):
         """
-        Creates a custom property with the :meth:`NodeObject.create_property`
+        Creates a custom property with the :meth:`NodeObject.add_property`
         function and embeds a :class:`PySide2.QtWidgets.QCheckBox` widget
         into the node.
 
@@ -290,7 +305,7 @@ class BaseNode(NodeObject):
             tooltip (str): widget tooltip.
             tab (str): name of the widget tab to display in.
         """
-        self.create_property(
+        self.model.add_property(
             name,
             value=state,
             widget_type=NodePropWidgetEnum.QCHECK_BOX.value,
@@ -386,7 +401,7 @@ class BaseNode(NodeObject):
             view.border_color = [min([255, max([0, i + 80])]) for i in color]
 
         port = Port(self, view)
-        port.model.type_ = PortTypeEnum.IN.value
+        port.model.dtype = PortTypeEnum.IN.value
         port.model.name = name
         port.model.display_name = display_name
         port.model.multi_connection = multi_input
@@ -434,7 +449,7 @@ class BaseNode(NodeObject):
             view.color = color
             view.border_color = [min([255, max([0, i + 80])]) for i in color]
         port = Port(self, view)
-        port.model.type_ = PortTypeEnum.OUT.value
+        port.model.dtype = PortTypeEnum.OUT.value
         port.model.name = name
         port.model.display_name = display_name
         port.model.multi_connection = multi_output
@@ -503,7 +518,7 @@ class BaseNode(NodeObject):
         self._inputs.remove(port)
         self._model.inputs.pop(port.name())
         self._view.delete_input(port.view)
-        port.model.node = None
+        # port.model.node = None
         self._view.draw_node()
 
     def delete_output(self, port):
@@ -534,7 +549,7 @@ class BaseNode(NodeObject):
         self._outputs.remove(port)
         self._model.outputs.pop(port.name())
         self._view.delete_output(port.view)
-        port.model.node = None
+        # port.model.node = None
         self._view.draw_node()
 
     def set_port_deletion_allowed(self, mode=False):
@@ -605,10 +620,10 @@ class BaseNode(NodeObject):
 
         for port in self._inputs:
             self._view.delete_input(port.view)
-            port.model.node = None
+            # port.model.node = None
         for port in self._outputs:
             self._view.delete_output(port.view)
-            port.model.node = None
+            # port.model.node = None
         self._inputs = []
         self._outputs = []
         self._model.outputs = {}
@@ -767,8 +782,8 @@ class BaseNode(NodeObject):
 
         self._model.add_port_accept_connection_type(
             port_name=port.name(),
-            port_type=port.type_(),
-            node_type=self.type_,
+            port_type=port.dtype(),
+            node_type=self.dtype,
             accept_pname=port_type_data["port_name"],
             accept_ptype=port_type_data["port_type"],
             accept_ntype=port_type_data["node_type"],
@@ -790,7 +805,7 @@ class BaseNode(NodeObject):
             raise PortError('Node does not contain port "{}"'.format(port))
 
         accepted_types = self.graph.model.port_accept_connection_types(
-            node_type=self.type_, port_type=port.type_(), port_name=port.name()
+            node_type=self.dtype, port_type=port.dtype(), port_name=port.name()
         )
         return accepted_types
 
@@ -825,8 +840,8 @@ class BaseNode(NodeObject):
 
         self._model.add_port_reject_connection_type(
             port_name=port.name(),
-            port_type=port.type_(),
-            node_type=self.type_,
+            port_type=port.dtype(),
+            node_type=self.dtype,
             reject_pname=port_type_data["port_name"],
             reject_ptype=port_type_data["port_type"],
             reject_ntype=port_type_data["node_type"],
@@ -848,7 +863,7 @@ class BaseNode(NodeObject):
             raise PortError(f"Node does not contain port '{port}'")
 
         rejected_types = self.graph.model.port_reject_connection_types(
-            node_type=self.type_, port_type=port.type_(), port_name=port.name()
+            node_type=self.dtype, port_type=port.dtype(), port_name=port.name()
         )
         return rejected_types
 

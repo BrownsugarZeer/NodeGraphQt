@@ -7,49 +7,7 @@ from NodeGraphQt.constants import (
     PipeLayoutEnum,
 )
 from NodeGraphQt.errors import NodePropertyError
-
-
-class PortModel(object):
-    """
-    Data dump for a port object.
-    """
-
-    def __init__(self, node):
-        self.node = node
-        self.type_ = ""
-        self.name = "port"
-        self.display_name = True
-        self.multi_connection = False
-        self.visible = True
-        self.locked = False
-        self.connected_ports = defaultdict(list)
-
-    def __repr__(self):
-        msg = f"{self.__class__.__name__}('{self.name}')"
-        msg = f"<{msg} object at {hex(id(self))}>"
-        return msg
-
-    @property
-    def to_dict(self):
-        """
-        serialize model information to a dictionary.
-
-        Returns:
-            dict: node port dictionary eg.
-                {
-                    'type': 'in',
-                    'name': 'port',
-                    'display_name': True,
-                    'multi_connection': False,
-                    'visible': True,
-                    'locked': False,
-                    'connected_ports': {<node_id>: [<port_name>, <port_name>]}
-                }
-        """
-        props = self.__dict__.copy()
-        props.pop("node")
-        props["connected_ports"] = dict(props.pop("connected_ports"))
-        return props
+from icecream import ic
 
 
 class NodeModel(object):
@@ -58,20 +16,20 @@ class NodeModel(object):
     """
 
     def __init__(self):
-        self.type_ = None
-        self.id = hex(id(self))
-        self.icon = None
-        self.name = "node"
-        self.color = (13, 18, 23, 255)
-        self.border_color = (74, 84, 85, 255)
-        self.text_color = (255, 255, 255, 180)
-        self.disabled = False
-        self.selected = False
-        self.visible = True
-        self.width = 100.0
-        self.height = 80.0
-        self.pos = [0.0, 0.0]
-        self.layout_direction = LayoutDirectionEnum.HORIZONTAL.value
+        self.dtype = None  # NodeObject
+        self.id = hex(id(self))  # str
+        self.icon = None  # str
+        self.name = "node"  # str
+        self.color = (13, 18, 23, 255)  # Tuple[int, int, int, int]
+        self.border_color = (74, 84, 85, 255)  # Tuple[int, int, int, int]
+        self.text_color = (255, 255, 255, 180)  # Tuple[int, int, int, int]
+        self.disabled = False  # bool
+        self.selected = False  # bool
+        self.visible = True  # bool
+        self.width = 100.0  # float
+        self.height = 80.0  # float
+        self.pos = [0.0, 0.0]  # List[float, float]
+        self.layout_direction = LayoutDirectionEnum.HORIZONTAL.value  # int
 
         # BaseNode attrs.
         self.inputs = {}
@@ -82,7 +40,7 @@ class NodeModel(object):
         self._custom_prop = {}
 
         # node graph model set at node added time.
-        self._graph_model = None
+        self._graph_model = None  # NodeGraphModel
 
         # store the property attributes.
         # (deleted when node is added to the graph)
@@ -91,7 +49,7 @@ class NodeModel(object):
         # temp store the property widget types.
         # (deleted when node is added to the graph)
         self._TEMP_property_widget_types = {
-            "type_": NodePropWidgetEnum.QLABEL.value,
+            "dtype": NodePropWidgetEnum.QLABEL.value,
             "id": NodePropWidgetEnum.QLABEL.value,
             "icon": NodePropWidgetEnum.HIDDEN.value,
             "name": NodePropWidgetEnum.QLINE_EDIT.value,
@@ -162,13 +120,13 @@ class NodeModel(object):
                 self._TEMP_property_attrs[name]["tooltip"] = widget_tooltip
 
         else:
-            attrs = {self.type_: {name: {"widget_type": widget_type, "tab": tab}}}
+            attrs = {self.dtype: {name: {"widget_type": widget_type, "tab": tab}}}
             if items:
-                attrs[self.type_][name]["items"] = items
+                attrs[self.dtype][name]["items"] = items
             if range:
-                attrs[self.type_][name]["range"] = range
+                attrs[self.dtype][name]["range"] = range
             if widget_tooltip:
-                attrs[self.type_][name]["tooltip"] = widget_tooltip
+                attrs[self.dtype][name]["tooltip"] = widget_tooltip
             self._graph_model.set_node_common_properties(attrs)
 
     def set_property(self, name, value):
@@ -217,7 +175,7 @@ class NodeModel(object):
         model = self._graph_model
         if model is None:
             return self._TEMP_property_widget_types.get(name)
-        return model.get_node_common_properties(self.type_)[name]["widget_type"]
+        return model.get_node_common_properties(self.dtype)[name]["widget_type"]
 
     def get_tab_name(self, name):
         """
@@ -233,7 +191,7 @@ class NodeModel(object):
             if attrs:
                 return attrs[name].get("tab")
             return
-        return model.get_node_common_properties(self.type_)[name]["tab"]
+        return model.get_node_common_properties(self.dtype)[name]["tab"]
 
     def add_port_accept_connection_type(
         self, port_name, port_type, node_type, accept_pname, accept_ptype, accept_ntype
@@ -358,7 +316,7 @@ class NodeModel(object):
                     'color': (48, 58, 69, 255),
                     'border_color': (85, 100, 100, 255),
                     'text_color': (255, 255, 255, 180),
-                    'type_': 'io.github.jchanvfx.FooNode',
+                    'dtype': 'io.github.jchanvfx.FooNode',
                     'selected': False,
                     'disabled': False,
                     'visible': True,
@@ -386,6 +344,8 @@ class NodeModel(object):
         outputs = {}
         input_ports = []
         output_ports = []
+
+        # TODO: type hint for model -> PortModel
         for name, model in node_dict.pop("inputs").items():
             if self.port_deletion_allowed:
                 input_ports.append(
@@ -395,7 +355,7 @@ class NodeModel(object):
                         "display_name": model.display_name,
                     }
                 )
-            connected_ports = model.to_dict["connected_ports"]
+            connected_ports = model.connected_ports
             if connected_ports:
                 inputs[name] = connected_ports
         for name, model in node_dict.pop("outputs").items():
@@ -407,7 +367,7 @@ class NodeModel(object):
                         "display_name": model.display_name,
                     }
                 )
-            connected_ports = model.to_dict["connected_ports"]
+            connected_ports = model.connected_ports
             if connected_ports:
                 outputs[name] = connected_ports
         if inputs:

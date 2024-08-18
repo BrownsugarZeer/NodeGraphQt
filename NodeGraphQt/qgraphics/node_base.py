@@ -12,7 +12,6 @@ from NodeGraphQt.constants import (
 )
 from NodeGraphQt.errors import NodeWidgetError
 from NodeGraphQt.qgraphics.node_abstract import AbstractNodeItem
-from NodeGraphQt.qgraphics.node_overlay_disabled import XDisabledItem
 from NodeGraphQt.qgraphics.node_text_item import NodeTextItem
 from NodeGraphQt.qgraphics.port import PortItem, CustomPortItem
 
@@ -29,12 +28,13 @@ class NodeItem(AbstractNodeItem):
     def __init__(self, name="node", parent=None):
         super().__init__(name, parent)
         self._text_item = NodeTextItem(self.name, self)
-        self._x_item = XDisabledItem(self, "DISABLED")
         self._input_items = OrderedDict()
         self._output_items = OrderedDict()
         self._widgets = OrderedDict()
-        self._proxy_mode = False
-        self._proxy_mode_threshold = 70
+
+        # TODO: Deprecated for simplefy
+        # self._proxy_mode = False
+        # self._proxy_mode_threshold = 70
 
     def post_init(self, viewer, pos=None):
         """
@@ -144,7 +144,7 @@ class NodeItem(AbstractNodeItem):
                 used to describe the parameters needed to draw.
             widget (QtWidgets.QWidget): not used.
         """
-        self.auto_switch_mode()
+        # self.auto_switch_mode()  # TODO: Deprecated for simplefy
         if self.layout_direction is LayoutDirectionEnum.HORIZONTAL.value:
             self._paint_horizontal(painter, option, widget)
         elif self.layout_direction is LayoutDirectionEnum.VERTICAL.value:
@@ -235,7 +235,7 @@ class NodeItem(AbstractNodeItem):
         tooltip = "<b>{}</b>".format(self.name)
         if state:
             tooltip += ' <font color="red"><b>(DISABLED)</b></font>'
-        tooltip += "<br/>{}<br/>".format(self.type_)
+        tooltip += "<br/>{}<br/>".format(self.dtype)
         self.setToolTip(tooltip)
 
     def _set_base_size(self, add_w=0.0, add_h=0.0):
@@ -655,73 +655,77 @@ class NodeItem(AbstractNodeItem):
         if pos:
             self.xy_pos = pos
 
-    def auto_switch_mode(self):
-        """
-        Decide whether to draw the node with proxy mode.
-        (this is called at the start in the "self.paint()" function.)
-        """
-        if ITEM_CACHE_MODE is QtWidgets.QGraphicsItem.ItemCoordinateCache:
-            return
+    # TODO: Deprecated for simplefy
+    # def auto_switch_mode(self):
+    #     """
+    #     Decide whether to draw the node with proxy mode.
+    #     (this is called at the start in the "self.paint()" function.)
+    #     """
+    #     if ITEM_CACHE_MODE is QtWidgets.QGraphicsItem.ItemCoordinateCache:
+    #         return
 
-        rect = self.sceneBoundingRect()
-        l = self.viewer().mapToGlobal(self.viewer().mapFromScene(rect.topLeft()))
-        r = self.viewer().mapToGlobal(self.viewer().mapFromScene(rect.topRight()))
-        # width is the node width in screen
-        width = r.x() - l.x()
+    #     rect = self.sceneBoundingRect()
+    #     l = self.viewer().mapToGlobal(self.viewer().mapFromScene(rect.topLeft()))
+    #     r = self.viewer().mapToGlobal(self.viewer().mapFromScene(rect.topRight()))
+    #     # width is the node width in screen
+    #     width = r.x() - l.x()
 
-        self.set_proxy_mode(width < self._proxy_mode_threshold)
+    #     self.set_proxy_mode(width < self._proxy_mode_threshold)
 
-    def set_proxy_mode(self, mode):
-        """
-        Set whether to draw the node with proxy mode.
-        (proxy mode toggles visibility for some qgraphic items in the node.)
+    # TODO: Deprecated for simplefy
+    # def set_proxy_mode(self, mode):
+    #     """
+    #     Set whether to draw the node with proxy mode.
+    #     (proxy mode toggles visibility for some qgraphic items in the node.)
 
-        Args:
-            mode (bool): true to enable proxy mode.
-        """
-        if mode is self._proxy_mode:
-            return
-        self._proxy_mode = mode
+    #     Args:
+    #         mode (bool): true to enable proxy mode.
+    #     """
+    #     if mode is self._proxy_mode:
+    #         return
+    #     self._proxy_mode = mode
 
-        visible = not mode
+    #     visible = not mode
 
-        # disable overlay item.
-        self._x_item.proxy_mode = self._proxy_mode
+    #     # disable overlay item.
+    #     self._x_item.proxy_mode = self._proxy_mode
 
-        # node widget visibility.
-        for w in self._widgets.values():
-            w.widget().setVisible(visible)
+    #     # node widget visibility.
+    #     for w in self._widgets.values():
+    #         w.widget().setVisible(visible)
 
-        # port text is not visible in vertical layout.
-        if self.layout_direction is LayoutDirectionEnum.VERTICAL.value:
-            port_text_visible = False
-        else:
-            port_text_visible = visible
+    #     # port text is not visible in vertical layout.
+    #     if self.layout_direction is LayoutDirectionEnum.VERTICAL.value:
+    #         port_text_visible = False
+    #     else:
+    #         port_text_visible = visible
 
-        # input port text visibility.
-        for port, text in self._input_items.items():
-            if port.display_name:
-                text.setVisible(port_text_visible)
+    #     # input port text visibility.
+    #     for port, text in self._input_items.items():
+    #         if port.display_name:
+    #             text.setVisible(port_text_visible)
 
-        # output port text visibility.
-        for port, text in self._output_items.items():
-            if port.display_name:
-                text.setVisible(port_text_visible)
+    #     # output port text visibility.
+    #     for port, text in self._output_items.items():
+    #         if port.display_name:
+    #             text.setVisible(port_text_visible)
 
-        self._text_item.setVisible(visible)
-        self._icon_item.setVisible(visible)
+    #     self._text_item.setVisible(visible)
+    #     # self._icon_item.setVisible(visible)  # TODO: Deprecated for simplefy
 
     @AbstractNodeItem.layout_direction.setter
     def layout_direction(self, value=0):
         AbstractNodeItem.layout_direction.fset(self, value)
         self.draw_node()
 
+    # TODO: Deprecated for simplefy
     # @AbstractNodeItem.width.setter
     # def width(self, width=0.0):
     #     w, h = self.calc_size()
     #     width = width if width > w else w
     #     AbstractNodeItem.width.fset(self, width)
 
+    # TODO: Deprecated for simplefy
     # @AbstractNodeItem.height.setter
     # def height(self, height=0.0):
     #     w, h = self.calc_size()
@@ -735,8 +739,8 @@ class NodeItem(AbstractNodeItem):
         for n, w in self._widgets.items():
             w.widget().setDisabled(state)
         self._tooltip_disable(state)
-        self._x_item.setVisible(state)
 
+    # TODO: Deprecated for simplefy
     # @AbstractNodeItem.selected.setter
     # def selected(self, selected=False):
     #     AbstractNodeItem.selected.fset(self, selected)
@@ -753,12 +757,13 @@ class NodeItem(AbstractNodeItem):
             self.align_label()
         self.update()
 
-    @AbstractNodeItem.color.setter
-    def color(self, color=(100, 100, 100, 255)):
-        AbstractNodeItem.color.fset(self, color)
-        if self.scene():
-            self.scene().update()
-        self.update()
+    # TODO: Deprecated for simplefy
+    # @AbstractNodeItem.color.setter
+    # def color(self, color=(100, 100, 100, 255)):
+    #     AbstractNodeItem.color.fset(self, color)
+    #     if self.scene():
+    #         self.scene().update()
+    #     self.update()
 
     @property
     def text_item(self):

@@ -22,7 +22,7 @@ class BackdropNode(NodeObject):
         super().__init__(qgraphics_views or BackdropNodeItem)
         # override base default color.
         self.model.color = (5, 129, 138, 255)
-        self.create_property(
+        self.model.add_property(
             "backdrop_text",
             "",
             widget_type=NodePropWidgetEnum.QTEXT_EDIT.value,
@@ -39,27 +39,33 @@ class BackdropNode(NodeObject):
             value (object): update value (optional)
         """
         if update_prop == "sizer_mouse_release":
-            self.graph.begin_undo(f"resized '{self.name()}'")
+            # TODO: self.name() -> self.view.name
+            self.graph.begin_undo(f"resized '{self.view.name}'")
             self.set_property("width", value["width"])
             self.set_property("height", value["height"])
-            self.set_pos(*value["pos"])
+            # TODO: n.set_pos() -> n.view.set_xy_pos
+            self.view.set_xy_pos = value["pos"]
             self.graph.end_undo()
         elif update_prop == "sizer_double_clicked":
-            self.graph.begin_undo(f"'{self.name()}' auto resize")
+            # TODO: self.name() -> self.view.name
+            self.graph.begin_undo(f"'{self.view.name}' auto resize")
             self.set_property("width", value["width"])
             self.set_property("height", value["height"])
-            self.set_pos(*value["pos"])
+            # TODO: n.set_pos() -> n.view.set_xy_pos
+            self.view.set_xy_pos = value["pos"]
             self.graph.end_undo()
 
     def auto_size(self):
         """
         Auto resize the backdrop node to fit around the intersecting nodes.
         """
-        self.graph.begin_undo(f"'{self.name()}' auto resize")
+        # TODO: self.name() -> self.view.name
+        self.graph.begin_undo(f"'{self.view.name}' auto resize")
         size = self.view.calc_backdrop_size()
         self.set_property("width", size["width"])
         self.set_property("height", size["height"])
-        self.set_pos(*size["pos"])
+        # TODO: n.set_pos() -> n.view.set_xy_pos
+        self.view.set_xy_pos = size["pos"]
         self.graph.end_undo()
 
     def wrap_nodes(self, nodes):
@@ -71,11 +77,13 @@ class BackdropNode(NodeObject):
         """
         if not nodes:
             return
-        self.graph.begin_undo(f"'{self.name()}' wrap nodes")
+        # TODO: self.name() -> self.view.name
+        self.graph.begin_undo(f"'{self.view.name}' wrap nodes")
         size = self.view.calc_backdrop_size([n.view for n in nodes])
         self.set_property("width", size["width"])
         self.set_property("height", size["height"])
-        self.set_pos(*size["pos"])
+        # TODO: n.set_pos() -> n.view.set_xy_pos
+        self.view.set_xy_pos = size["pos"]
         self.graph.end_undo()
 
     def nodes(self):

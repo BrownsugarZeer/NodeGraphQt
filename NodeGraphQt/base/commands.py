@@ -15,10 +15,11 @@ class PropertyChangedCmd(QtGui.QUndoCommand):
 
     def __init__(self, node, name, value):
         super().__init__()
-        self.setText(f"property '{node.name()}:{name}'")
+        # TODO: node.name() -> node.view.name
+        self.setText(f"property '{node.view.name}:{name}'")
         self.node = node
         self.name = name
-        self.old_val = node.get_property(name)
+        self.old_val = node.model.get_property(name)
         self.new_val = value
 
     def set_node_property(self, name, value):
@@ -177,7 +178,8 @@ class NodeAddedCmd(QtGui.QUndoCommand):
 
     def undo(self):
         node_id = self.node.id
-        self.pos = self.pos or self.node.pos()
+        # TODO: n.x_pos(), n.y_pos() -> n.view.xy_pos
+        self.pos = self.pos or self.node.view.xy_pos
         self.graph.model.nodes.pop(self.node.id)
         self.node.view.delete()
 
@@ -244,7 +246,7 @@ class NodeInputConnectedCmd(QtGui.QUndoCommand):
 
     def __init__(self, src_port, trg_port):
         super().__init__()
-        if src_port.type_() == PortTypeEnum.IN.value:
+        if src_port.dtype() == PortTypeEnum.IN.value:
             self.source = src_port
             self.target = trg_port
         else:
@@ -271,7 +273,7 @@ class NodeInputDisconnectedCmd(QtGui.QUndoCommand):
 
     def __init__(self, src_port, trg_port):
         super().__init__()
-        if src_port.type_() == PortTypeEnum.IN.value:
+        if src_port.dtype() == PortTypeEnum.IN.value:
             self.source = src_port
             self.target = trg_port
         else:
@@ -325,7 +327,7 @@ class PortConnectedCmd(QtGui.QUndoCommand):
 
         # emit "port_disconnected" signal from the parent graph.
         if self.emit_signal:
-            ports = {p.type_(): p for p in [self.source, self.target]}
+            ports = {p.dtype(): p for p in [self.source, self.target]}
             graph = self.source.node().graph
             graph.port_disconnected.emit(
                 ports[PortTypeEnum.IN.value], ports[PortTypeEnum.OUT.value]
@@ -344,7 +346,7 @@ class PortConnectedCmd(QtGui.QUndoCommand):
 
         # emit "port_connected" signal from the parent graph.
         if self.emit_signal:
-            ports = {p.type_(): p for p in [self.source, self.target]}
+            ports = {p.dtype(): p for p in [self.source, self.target]}
             graph = self.source.node().graph
             graph.port_connected.emit(
                 ports[PortTypeEnum.IN.value], ports[PortTypeEnum.OUT.value]
@@ -380,7 +382,7 @@ class PortDisconnectedCmd(QtGui.QUndoCommand):
 
         # emit "port_connected" signal from the parent graph.
         if self.emit_signal:
-            ports = {p.type_(): p for p in [self.source, self.target]}
+            ports = {p.dtype(): p for p in [self.source, self.target]}
             graph = self.source.node().graph
             graph.port_connected.emit(
                 ports[PortTypeEnum.IN.value], ports[PortTypeEnum.OUT.value]
@@ -408,7 +410,7 @@ class PortDisconnectedCmd(QtGui.QUndoCommand):
 
         # emit "port_disconnected" signal from the parent graph.
         if self.emit_signal:
-            ports = {p.type_(): p for p in [self.source, self.target]}
+            ports = {p.dtype(): p for p in [self.source, self.target]}
             graph = self.source.node().graph
             graph.port_disconnected.emit(
                 ports[PortTypeEnum.IN.value], ports[PortTypeEnum.OUT.value]
@@ -481,9 +483,9 @@ class PortVisibleCmd(QtGui.QUndoCommand):
         self.port.view.setVisible(visible)
         node_view = self.port.node().view
         text_item = None
-        if self.port.type_() == PortTypeEnum.IN.value:
+        if self.port.dtype() == PortTypeEnum.IN.value:
             text_item = node_view.get_input_text_item(self.port.view)
-        elif self.port.type_() == PortTypeEnum.OUT.value:
+        elif self.port.dtype() == PortTypeEnum.OUT.value:
             text_item = node_view.get_output_text_item(self.port.view)
         if text_item:
             text_item.setVisible(visible)
