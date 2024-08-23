@@ -21,7 +21,7 @@ class BackdropNode(NodeObject):
     def __init__(self, qgraphics_views=None):
         super().__init__(qgraphics_views or BackdropNodeItem)
         # override base default color.
-        self.model.color = (5, 129, 138, 255)
+        # self.model.color = (5, 129, 138, 255)
         self.model.add_property(
             "backdrop_text",
             "",
@@ -41,16 +41,16 @@ class BackdropNode(NodeObject):
         if update_prop == "sizer_mouse_release":
             # TODO: self.name() -> self.view.name
             self.graph.begin_undo(f"resized '{self.view.name}'")
-            self.set_property("width", value["width"])
-            self.set_property("height", value["height"])
+            self.model.set_property("width", value["width"])
+            self.model.set_property("height", value["height"])
             # TODO: n.set_pos() -> n.view.set_xy_pos
             self.view.set_xy_pos = value["pos"]
             self.graph.end_undo()
         elif update_prop == "sizer_double_clicked":
             # TODO: self.name() -> self.view.name
             self.graph.begin_undo(f"'{self.view.name}' auto resize")
-            self.set_property("width", value["width"])
-            self.set_property("height", value["height"])
+            self.model.set_property("width", value["width"])
+            self.model.set_property("height", value["height"])
             # TODO: n.set_pos() -> n.view.set_xy_pos
             self.view.set_xy_pos = value["pos"]
             self.graph.end_undo()
@@ -62,8 +62,8 @@ class BackdropNode(NodeObject):
         # TODO: self.name() -> self.view.name
         self.graph.begin_undo(f"'{self.view.name}' auto resize")
         size = self.view.calc_backdrop_size()
-        self.set_property("width", size["width"])
-        self.set_property("height", size["height"])
+        self.model.set_property("width", size["width"])
+        self.model.set_property("height", size["height"])
         # TODO: n.set_pos() -> n.view.set_xy_pos
         self.view.set_xy_pos = size["pos"]
         self.graph.end_undo()
@@ -80,8 +80,8 @@ class BackdropNode(NodeObject):
         # TODO: self.name() -> self.view.name
         self.graph.begin_undo(f"'{self.view.name}' wrap nodes")
         size = self.view.calc_backdrop_size([n.view for n in nodes])
-        self.set_property("width", size["width"])
-        self.set_property("height", size["height"])
+        self.model.set_property("width", size["width"])
+        self.model.set_property("height", size["height"])
         # TODO: n.set_pos() -> n.view.set_xy_pos
         self.view.set_xy_pos = size["pos"]
         self.graph.end_undo()
@@ -103,7 +103,7 @@ class BackdropNode(NodeObject):
         Args:
             text (str): text string.
         """
-        self.set_property("backdrop_text", text)
+        self.model.set_property("backdrop_text", text)
 
     def text(self):
         """
@@ -112,7 +112,7 @@ class BackdropNode(NodeObject):
         Returns:
             str: text string.
         """
-        return self.get_property("backdrop_text")
+        return self.model.get_property("backdrop_text")
 
     def set_size(self, width, height):
         """
@@ -124,8 +124,8 @@ class BackdropNode(NodeObject):
         """
         if self.graph:
             self.graph.begin_undo("backdrop size")
-            self.set_property("width", width)
-            self.set_property("height", height)
+            self.model.set_property("width", width)
+            self.model.set_property("height", height)
             self.graph.end_undo()
             return
         self.view.width, self.view.height = width, height

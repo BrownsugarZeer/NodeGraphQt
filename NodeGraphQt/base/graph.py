@@ -26,12 +26,11 @@ from NodeGraphQt.constants import (
     PortTypeEnum,
     ViewerEnum,
 )
-from NodeGraphQt.errors import NodeCreationError
-from NodeGraphQt.nodes.backdrop_node import BackdropNode
+
+# from NodeGraphQt.nodes.backdrop_node import BackdropNode
 from NodeGraphQt.nodes.base_node import BaseNode
 from NodeGraphQt.widgets.node_graph import NodeGraphWidget
 from NodeGraphQt.widgets.viewer import NodeViewer
-from icecream import ic
 
 
 class NodeGraph(QtCore.QObject):
@@ -177,7 +176,8 @@ class NodeGraph(QtCore.QObject):
         self._context_menu = {}
 
         self._register_context_menu()
-        self._register_builtin_nodes()
+        # TODO: drop node Not ready yet.
+        # self._register_builtin_nodes()
         self._wire_signals()
 
     def __repr__(self):
@@ -197,11 +197,12 @@ class NodeGraph(QtCore.QObject):
         if menus.get("nodes"):
             self._context_menu["nodes"] = NodesMenu(self, menus["nodes"])
 
-    def _register_builtin_nodes(self):
-        """
-        Register the default builtin nodes to the :meth:`NodeGraph.node_factory`
-        """
-        self.register_node(BackdropNode, alias="Backdrop")
+    # TODO: drop node Not ready yet.
+    # def _register_builtin_nodes(self):
+    #     """
+    #     Register the default builtin nodes to the :meth:`NodeGraph.node_factory`
+    #     """
+    #     self.register_node(BackdropNode, alias="Backdrop")
 
     def _wire_signals(self):
         """
@@ -215,7 +216,8 @@ class NodeGraph(QtCore.QObject):
         self._viewer.moved_nodes.connect(self._on_nodes_moved)
         self._viewer.node_double_clicked.connect(self._on_node_double_clicked)
         self._viewer.node_name_changed.connect(self._on_node_name_changed)
-        self._viewer.node_backdrop_updated.connect(self._on_node_backdrop_updated)
+        # TODO: drop node Not ready yet.
+        # self._viewer.node_backdrop_updated.connect(self._on_node_backdrop_updated)
         self._viewer.insert_node.connect(self._on_insert_node)
 
         # pass through translated signals.
@@ -385,17 +387,18 @@ class NodeGraph(QtCore.QObject):
             self._undo_stack.push(NodeMovedCmd(node, node.view.xy_pos, prev_pos))
         self._undo_stack.endMacro()
 
-    def _on_node_backdrop_updated(self, node_id, update_property, value):
-        """
-        called when a BackdropNode is updated.
+    # TODO: drop node Not ready yet.
+    # def _on_node_backdrop_updated(self, node_id, update_property, value):
+    #     """
+    #     called when a BackdropNode is updated.
 
-        Args:
-            node_id (str): backdrop node id.
-            value (str): update type.
-        """
-        backdrop = self.get_node_by_id(node_id)
-        if backdrop and isinstance(backdrop, BackdropNode):
-            backdrop.on_backdrop_updated(update_property, value)
+    #     Args:
+    #         node_id (str): backdrop node id.
+    #         value (str): update type.
+    #     """
+    #     backdrop = self.get_node_by_id(node_id)
+    #     if backdrop and isinstance(backdrop, BackdropNode):
+    #         backdrop.on_backdrop_updated(update_property, value)
 
     def _on_search_triggered(self, node_type, pos):
         """
@@ -1193,46 +1196,17 @@ class NodeGraph(QtCore.QObject):
             node._graph = self
             node.model._graph_model = self.model
 
-            wid_types = node.model._TEMP_property_widget_types
-            prop_attrs = node.model._TEMP_property_attrs
+            wid_types = node.model._property_widget_types
+            prop_attrs = node.model._property_attrs
+            node_type = node.dtype()
 
-            if self.model.get_node_common_properties(node.dtype) is None:
+            if self.model.get_node_common_properties(node_type) is None:
                 node_attrs = {
-                    node.dtype: {n: {"widget_type": wt} for n, wt in wid_types.items()}
+                    node_type: {n: {"widget_type": wt} for n, wt in wid_types.items()}
                 }
                 for pname, pattrs in prop_attrs.items():
-                    node_attrs[node.dtype][pname].update(pattrs)
+                    node_attrs[node_type][pname].update(pattrs)
                 self.model.set_node_common_properties(node_attrs)
-
-            accept_types = node.model._TEMP_accept_connection_types
-            for ptype, pdata in accept_types.get(node.dtype, {}).items():
-                for pname, accept_data in pdata.items():
-                    for accept_ntype, accept_ndata in accept_data.items():
-                        for accept_ptype, accept_pnames in accept_ndata.items():
-                            for accept_pname in accept_pnames:
-                                self._model.add_port_accept_connection_type(
-                                    port_name=pname,
-                                    port_type=ptype,
-                                    node_type=node.dtype,
-                                    accept_pname=accept_pname,
-                                    accept_ptype=accept_ptype,
-                                    accept_ntype=accept_ntype,
-                                )
-
-            reject_types = node.model._TEMP_reject_connection_types
-            for ptype, pdata in reject_types.get(node.dtype, {}).items():
-                for pname, reject_data in pdata.items():
-                    for reject_ntype, reject_ndata in reject_data.items():
-                        for reject_ptype, reject_pnames in reject_ndata.items():
-                            for reject_pname in reject_pnames:
-                                self._model.add_port_reject_connection_type(
-                                    port_name=pname,
-                                    port_type=ptype,
-                                    node_type=node.dtype,
-                                    reject_pname=reject_pname,
-                                    reject_ptype=reject_ptype,
-                                    reject_ntype=reject_ntype,
-                                )
 
             node.NODE_NAME = self.get_unique_name(name or node.NODE_NAME)
             node.model.name = node.NODE_NAME
@@ -1271,8 +1245,6 @@ class NodeGraph(QtCore.QObject):
 
             return node
 
-        raise NodeCreationError(f"Can't find node: '{node_type}'")
-
     def add_node(self, node, pos=None, selected=True, push_undo=True):
         """
         Add a node into the node graph.
@@ -1287,46 +1259,17 @@ class NodeGraph(QtCore.QObject):
         """
         assert isinstance(node, NodeObject), "node must be a Node instance."
 
-        wid_types = node.model._TEMP_property_widget_types
-        prop_attrs = node.model._TEMP_property_attrs
+        wid_types = node.model._property_widget_types
+        prop_attrs = node.model._property_attrs
+        node_type = node.dtype()
 
-        if self.model.get_node_common_properties(node.dtype) is None:
+        if self.model.get_node_common_properties(node_type) is None:
             node_attrs = {
-                node.dtype: {n: {"widget_type": wt} for n, wt in wid_types.items()}
+                node_type: {n: {"widget_type": wt} for n, wt in wid_types.items()}
             }
             for pname, pattrs in prop_attrs.items():
-                node_attrs[node.dtype][pname].update(pattrs)
+                node_attrs[node_type][pname].update(pattrs)
             self.model.set_node_common_properties(node_attrs)
-
-        accept_types = node.model._TEMP_accept_connection_types
-        for ptype, pdata in accept_types.get(node.dtype, {}).items():
-            for pname, accept_data in pdata.items():
-                for accept_ntype, accept_ndata in accept_data.items():
-                    for accept_ptype, accept_pnames in accept_ndata.items():
-                        for accept_pname in accept_pnames:
-                            self._model.add_port_accept_connection_type(
-                                port_name=pname,
-                                port_type=ptype,
-                                node_type=node.dtype,
-                                accept_pname=accept_pname,
-                                accept_ptype=accept_ptype,
-                                accept_ntype=accept_ntype,
-                            )
-
-        reject_types = node.model._TEMP_reject_connection_types
-        for ptype, pdata in reject_types.get(node.dtype, {}).items():
-            for pname, reject_data in pdata.items():
-                for reject_ntype, reject_ndata in reject_data.items():
-                    for reject_ptype, reject_pnames in reject_ndata.items():
-                        for reject_pname in reject_pnames:
-                            self._model.add_port_reject_connection_type(
-                                port_name=pname,
-                                port_type=ptype,
-                                node_type=node.dtype,
-                                reject_pname=reject_pname,
-                                reject_ptype=reject_ptype,
-                                reject_ntype=reject_ntype,
-                            )
 
         node._graph = self
         node.NODE_NAME = self.get_unique_name(node.NODE_NAME)
@@ -1683,12 +1626,10 @@ class NodeGraph(QtCore.QObject):
         ] = self.model.reject_connection_types
 
         # serialize nodes.
-        for n in nodes:
+        for node in nodes:
             # update the node model.
-            n.update_model()
-
-            node_dict = n.model.to_dict
-            nodes_data.update(node_dict)
+            node.update_model()
+            nodes_data.update({node.model.id: node.model.properties})
 
         for n_id, n_data in nodes_data.items():
             serial_data["nodes"][n_id] = n_data
@@ -1762,8 +1703,8 @@ class NodeGraph(QtCore.QObject):
             if node:
                 node.NODE_NAME = n_data.get("name", node.NODE_NAME)
                 # set properties.
-                for prop in node.model.properties.keys():
-                    if prop in n_data.keys():
+                for prop in node.model.properties:
+                    if prop in n_data:
                         node.model.set_property(prop, n_data[prop])
                 # set custom properties.
                 for prop, val in n_data.get("custom", {}).items():
@@ -2166,9 +2107,11 @@ class NodeGraph(QtCore.QObject):
 
         nodes = nodes or self.all_nodes()
 
+        # TODO: drop node Not ready yet.
         # filter out the backdrops.
-        backdrops = {n: n.nodes() for n in nodes if isinstance(n, BackdropNode)}
-        filtered_nodes = [n for n in nodes if not isinstance(n, BackdropNode)]
+        # backdrops = {n: n.nodes() for n in nodes if isinstance(n, BackdropNode)}
+        # filtered_nodes = [n for n in nodes if not isinstance(n, BackdropNode)]
+        filtered_nodes = nodes
 
         start_nodes = start_nodes or []
         if down_stream:
@@ -2242,9 +2185,10 @@ class NodeGraph(QtCore.QObject):
             x_pos, y_pos = n.view.xy_pos
             n.view.xy_pos = (x_pos + dx, y_pos + dy)
 
+        # TODO: drop node Not ready yet.
         # wrap the backdrop nodes.
-        for backdrop, contained_nodes in backdrops.items():
-            backdrop.wrap_nodes(contained_nodes)
+        # for backdrop, contained_nodes in backdrops.items():
+        #     backdrop.wrap_nodes(contained_nodes)
 
         self.end_undo()
 

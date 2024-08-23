@@ -7,7 +7,7 @@ class NodeTextItem(QtWidgets.QGraphicsTextItem):
     """
 
     def __init__(self, text, parent=None):
-        super(NodeTextItem, self).__init__(text, parent)
+        super().__init__(text, parent)
         self._locked = False
         self.set_locked(False)
         self.set_editable(False)

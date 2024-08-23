@@ -12,7 +12,8 @@ from NodeGraphQt.constants import (
     Z_VAL_PIPE,
 )
 from NodeGraphQt.qgraphics.node_abstract import AbstractNodeItem
-from NodeGraphQt.qgraphics.node_backdrop import BackdropNodeItem
+
+# from NodeGraphQt.qgraphics.node_backdrop import BackdropNodeItem
 from NodeGraphQt.qgraphics.pipe import PipeItem, LivePipeItem
 from NodeGraphQt.qgraphics.port import PortItem
 from NodeGraphQt.qgraphics.slicer import SlicerPipeItem
@@ -387,9 +388,9 @@ class NodeViewer(QtWidgets.QGraphicsView):
                 self.context_menu_prompt.emit(prompted_data[0], prompted_data[1])
                 ctx_menu.exec_(event.globalPos())
             else:
-                return super(NodeViewer, self).contextMenuEvent(event)
+                return super().contextMenuEvent(event)
 
-        return super(NodeViewer, self).contextMenuEvent(event)
+        return super().contextMenuEvent(event)
 
     def mousePressEvent(self, event):
         if event.button() == QtCore.Qt.MouseButton.LeftButton:
@@ -430,9 +431,10 @@ class NodeViewer(QtWidgets.QGraphicsView):
             if isinstance(itm, PipeItem):
                 pipes.append(itm)
             elif isinstance(itm, AbstractNodeItem):
-                if isinstance(itm, BackdropNodeItem):
-                    backdrop = itm
-                    continue
+                # TODO: drop node Not ready yet.
+                # if isinstance(itm, BackdropNodeItem):
+                #     backdrop = itm
+                #     continue
                 nodes.append(itm)
 
         if nodes:
@@ -880,8 +882,9 @@ class NodeViewer(QtWidgets.QGraphicsView):
             if event.button() == QtCore.Qt.MouseButton.LeftButton:
                 self.node_selected.emit(node.id)
 
-            if not isinstance(node, BackdropNodeItem):
-                return
+            # TODO: drop node Not ready yet.
+            # if not isinstance(node, BackdropNodeItem):
+            #     return
 
         if pipe:
             if not self.LMB_state:
@@ -938,7 +941,7 @@ class NodeViewer(QtWidgets.QGraphicsView):
         to_ptype = to_port.port_type
         from_ptype = from_port.port_type
 
-        # validate the start.
+        # validate the start.'
         from_data = self.accept_connection_types.get(from_port.node.dtype) or {}
         constraints = from_data.get(from_ptype, {}).get(from_port.name, {})
         accept_data = constraints.get(to_port.node.dtype, {})

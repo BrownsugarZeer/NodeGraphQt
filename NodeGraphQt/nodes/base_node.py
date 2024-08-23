@@ -1,7 +1,5 @@
 from collections import OrderedDict
 
-from PySide6 import QtCore, QtSvgWidgets
-
 from NodeGraphQt.base.commands import (
     NodeVisibleCmd,
     NodeWidgetVisibleCmd,
@@ -12,18 +10,14 @@ from NodeGraphQt.base.port import Port
 from NodeGraphQt.constants import (
     NodePropWidgetEnum,
     PortTypeEnum,
-    NodeEnum,
-    ICON_NODE_ADJUST,
 )
 from NodeGraphQt.errors import PortError, PortRegistrationError, NodeWidgetError
-
 from NodeGraphQt.widgets.node_widgets import (
     NodeBaseWidget,
     NodeCheckBox,
     NodeComboBox,
     NodeLineEdit,
 )
-from icecream import ic
 
 
 class BaseNode(NodeObject):
@@ -407,7 +401,7 @@ class BaseNode(NodeObject):
         port.model.multi_connection = multi_input
         port.model.locked = locked
         self._inputs.append(port)
-        self.model.inputs[port.name()] = port.model
+        self.model.inputs[port.name] = port.model
         return port
 
     def add_output(
@@ -455,7 +449,7 @@ class BaseNode(NodeObject):
         port.model.multi_connection = multi_output
         port.model.locked = locked
         self._outputs.append(port)
-        self.model.outputs[port.name()] = port.model
+        self.model.outputs[port.name] = port.model
         return port
 
     def get_input(self, port):
@@ -510,13 +504,13 @@ class BaseNode(NodeObject):
                 return
         if not self.port_deletion_allowed():
             raise PortError(
-                f"Port '{port.name()}' can't be deleted on this node because "
+                f"Port '{port.name}' can't be deleted on this node because "
                 f"'ports_removable' is not enabled."
             )
         if port.locked():
             raise PortError("Error: Can't delete a port that is locked!")
         self._inputs.remove(port)
-        self._model.inputs.pop(port.name())
+        self._model.inputs.pop(port.name)
         self._view.delete_input(port.view)
         # port.model.node = None
         self._view.draw_node()
@@ -541,13 +535,13 @@ class BaseNode(NodeObject):
                 return
         if not self.port_deletion_allowed():
             raise PortError(
-                f"Port '{port.name()}' can't be deleted on this node because "
+                f"Port '{port.name}' can't be deleted on this node because "
                 f"'ports_removable' is not enabled."
             )
         if port.locked():
             raise PortError("Error: Can't delete a port that is locked!")
         self._outputs.remove(port)
-        self._model.outputs.pop(port.name())
+        self._model.outputs.pop(port.name)
         self._view.delete_output(port.view)
         # port.model.node = None
         self._view.draw_node()
@@ -652,7 +646,7 @@ class BaseNode(NodeObject):
         Returns:
             dict: {<port_name>: <port_object>}
         """
-        return {p.name(): p for p in self._inputs}
+        return {p.name: p for p in self._inputs}
 
     def input_ports(self):
         """
@@ -670,7 +664,7 @@ class BaseNode(NodeObject):
         Returns:
             dict: {<port_name>: <port_object>}
         """
-        return {p.name(): p for p in self._outputs}
+        return {p.name: p for p in self._outputs}
 
     def output_ports(self):
         """
@@ -736,7 +730,7 @@ class BaseNode(NodeObject):
         """
         nodes = OrderedDict()
         for p in self.input_ports():
-            nodes[p] = [cp.node() for cp in p.connected_ports()]
+            nodes[p] = [cp.node for cp in p.connected_ports()]
         return nodes
 
     def connected_output_nodes(self):
@@ -748,124 +742,77 @@ class BaseNode(NodeObject):
         """
         nodes = OrderedDict()
         for p in self.output_ports():
-            nodes[p] = [cp.node() for cp in p.connected_ports()]
+            nodes[p] = [cp.node for cp in p.connected_ports()]
         return nodes
 
-    def add_accept_port_type(self, port, port_type_data):
+    def add_accept_port_type(self, port, accept_pname, accept_ptype, accept_ntype):
         """
         Add an accept constrain to a specified node port.
 
         Once a constraint has been added only ports of that type specified will
         be allowed a pipe connection.
 
-        port type data example
+        Args:
+            port (NodeGraphQt.Port): port to assign constrain to.
+            accept_pname (str):port name to accept.
+            accept_ptype (str): port type accept.
+            accept_ntype (str):port node type to accept.
+        """
+        port_name = port.name
+        port_type = port.dtype
+        node_type = self.dtype()
 
-        .. highlight:: python
-        .. code-block:: python
+        node_ports = self._inputs + self._outputs
+        if port not in node_ports:
+            raise PortError(f"Node does not contain port: '{port}'")
 
-            {
-                'port_name': 'foo'
-                'port_type': PortTypeEnum.IN.value
-                'node_type': 'io.github.jchanvfx.NodeClass'
+        connection_data = self._model._graph_model.accept_connection_types
+        keys = [node_type, port_type, port_name, accept_ntype]
+        for key in keys:
+            if key not in connection_data:
+                connection_data[key] = {}
+            connection_data = connection_data[key]
+
+        if accept_ptype not in connection_data:
+            connection_data[accept_ptype] = set([accept_pname])
+        else:
+            # ensure data remains a set instead of list after json de-serialize
+            connection_data[accept_ptype] = set(connection_data[accept_ptype]) | {
+                accept_pname
             }
 
-        See Also:
-            :meth:`NodeGraphQt.BaseNode.accepted_port_types`
+    def add_reject_port_type(self, port, reject_pname, reject_ptype, reject_ntype):
+        """
+        Convenience function for adding to the "reject_connection_types" dict.
 
         Args:
             port (NodeGraphQt.Port): port to assign constrain to.
-            port_type_data (dict): port type data to accept a connection
+            reject_pname (str): port name to reject.
+            reject_ptype (str): port type to reject.
+            reject_ntype (str): port node type to reject.
         """
+        port_name = port.name
+        port_type = port.dtype
+        node_type = self.dtype()
+
         node_ports = self._inputs + self._outputs
         if port not in node_ports:
-            raise PortError('Node does not contain port: "{}"'.format(port))
+            raise PortError(f"Node does not contain port: '{port}'")
 
-        self._model.add_port_accept_connection_type(
-            port_name=port.name(),
-            port_type=port.dtype(),
-            node_type=self.dtype,
-            accept_pname=port_type_data["port_name"],
-            accept_ptype=port_type_data["port_type"],
-            accept_ntype=port_type_data["node_type"],
-        )
+        connection_data = self._model._graph_model.reject_connection_types
+        keys = [node_type, port_type, port_name, reject_ntype]
+        for key in keys:
+            if key not in connection_data:
+                connection_data[key] = {}
+            connection_data = connection_data[key]
 
-    def accepted_port_types(self, port):
-        """
-        Returns a dictionary of connection constrains of the port types
-        that allow for a pipe connection to this node.
-
-        Args:
-            port (NodeGraphQt.Port): port object.
-
-        Returns:
-            dict: {<node_type>: {<port_type>: [<port_name>]}}
-        """
-        ports = self._inputs + self._outputs
-        if port not in ports:
-            raise PortError('Node does not contain port "{}"'.format(port))
-
-        accepted_types = self.graph.model.port_accept_connection_types(
-            node_type=self.dtype, port_type=port.dtype(), port_name=port.name()
-        )
-        return accepted_types
-
-    def add_reject_port_type(self, port, port_type_data):
-        """
-        Add a reject constrain to a specified node port.
-
-        Once a constraint has been added only ports of that type specified will
-        NOT be allowed a pipe connection.
-
-        port type data example
-
-        .. highlight:: python
-        .. code-block:: python
-
-            {
-                'port_name': 'foo'
-                'port_type': PortTypeEnum.IN.value
-                'node_type': 'io.github.jchanvfx.NodeClass'
+        if reject_ptype not in connection_data:
+            connection_data[reject_ptype] = set([reject_pname])
+        else:
+            # ensure data remains a set instead of list after json de-serialize
+            connection_data[reject_ptype] = set(connection_data[reject_ptype]) | {
+                reject_pname
             }
-
-        See Also:
-            :meth:`NodeGraphQt.Port.rejected_port_types`
-
-        Args:
-            port (NodeGraphQt.Port): port to assign constrain to.
-            port_type_data (dict): port type data to reject a connection
-        """
-        node_ports = self._inputs + self._outputs
-        if port not in node_ports:
-            raise PortError('Node does not contain port: "{}"'.format(port))
-
-        self._model.add_port_reject_connection_type(
-            port_name=port.name(),
-            port_type=port.dtype(),
-            node_type=self.dtype,
-            reject_pname=port_type_data["port_name"],
-            reject_ptype=port_type_data["port_type"],
-            reject_ntype=port_type_data["node_type"],
-        )
-
-    def rejected_port_types(self, port):
-        """
-        Returns a dictionary of connection constrains of the port types
-        that are NOT allowed for a pipe connection to this node.
-
-        Args:
-            port (NodeGraphQt.Port): port object.
-
-        Returns:
-            dict: {<node_type>: {<port_type>: [<port_name>]}}
-        """
-        ports = self._inputs + self._outputs
-        if port not in ports:
-            raise PortError(f"Node does not contain port '{port}'")
-
-        rejected_types = self.graph.model.port_reject_connection_types(
-            node_type=self.dtype, port_type=port.dtype(), port_name=port.name()
-        )
-        return rejected_types
 
     def on_input_connected(self, in_port, out_port):
         """

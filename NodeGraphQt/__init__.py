@@ -53,7 +53,8 @@ from .base.menu import NodesMenu, NodeGraphMenu, NodeGraphCommand
 from .base.port import Port
 from .base.node import NodeObject
 from .nodes.base_node import BaseNode
-from .nodes.backdrop_node import BackdropNode
+
+# from .nodes.backdrop_node import BackdropNode
 
 # widgets
 from .widgets.node_widgets import NodeBaseWidget
@@ -64,7 +65,7 @@ install()
 
 __version__ = VERSION
 __all__ = [
-    "BackdropNode",
+    # "BackdropNode",
     "BaseNode",
     "LICENSE",
     "NodeBaseWidget",
@@ -76,5 +77,4 @@ __all__ = [
     "Port",
     "VERSION",
     "constants",
-    "custom_widgets",
 ]

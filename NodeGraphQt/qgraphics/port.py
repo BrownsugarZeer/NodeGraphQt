@@ -119,12 +119,6 @@ class PortItem(QtWidgets.QGraphicsItem):
             self.redraw_connected_pipes()
         return super(PortItem, self).itemChange(change, value)
 
-    def mousePressEvent(self, event):
-        super(PortItem, self).mousePressEvent(event)
-
-    def mouseReleaseEvent(self, event):
-        super(PortItem, self).mouseReleaseEvent(event)
-
     def hoverEnterEvent(self, event):
         self._hovered = True
         super(PortItem, self).hoverEnterEvent(event)

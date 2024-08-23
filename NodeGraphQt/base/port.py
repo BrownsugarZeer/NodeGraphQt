@@ -36,7 +36,7 @@ class PortModel(BaseModel):
     model_config = ConfigDict(arbitrary_types_allowed=True)
 
 
-class Port(object):
+class Port:
     """
     The ``Port`` class is used for connecting one node to another.
 
@@ -59,7 +59,7 @@ class Port(object):
         self.__model = PortModel(node=node)
 
     def __repr__(self):
-        msg = f"{self.__class__.__name__}('{self.name()}')"
+        msg = f"{self.__class__.__name__}('{self.name}')"
         msg = f"<{msg} object at {hex(id(self))}>"
         return msg
 
@@ -83,6 +83,17 @@ class Port(object):
         """
         return self.__model
 
+    @property
+    def node(self):
+        """
+        Return the parent node.
+
+        Returns:
+            NodeGraphQt.BaseNode: parent node object.
+        """
+        return self.model.node
+
+    @property
     def dtype(self):
         """
         Returns the port type.
@@ -96,24 +107,7 @@ class Port(object):
         """
         return self.model.dtype
 
-    def multi_connection(self):
-        """
-        Returns if the ports is a single connection or not.
-
-        Returns:
-            bool: false if port is a single connection port
-        """
-        return self.model.multi_connection
-
-    def node(self):
-        """
-        Return the parent node.
-
-        Returns:
-            NodeGraphQt.BaseNode: parent node object.
-        """
-        return self.model.node
-
+    @property
     def name(self):
         """
         Returns the port name.
@@ -122,6 +116,86 @@ class Port(object):
             str: port name.
         """
         return self.model.name
+
+    @property
+    def accepted_port_types(self):
+        """
+        Returns a dictionary of connection constrains of the port types
+        that allow for a pipe connection to this node.
+
+        See Also:
+            :meth:`NodeGraphQt.BaseNode.accepted_port_types`
+
+        Returns:
+            dict: {<node_type>: {<port_type>: [<port_name>]}}
+        """
+        # return self.node.port_accept_connection_types(self)
+        port_name = self.name
+        port_type = self.dtype
+        node_type = self.node.dtype()
+
+        ports = self.node._inputs + self.node._outputs
+        if self not in ports:
+            raise PortError(f"Node does not contain port '{self}'")
+
+        data = (
+            self.node._model._graph_model.accept_connection_types.get(node_type) or {}
+        )
+        accepted_types = data.get(port_type) or {}
+        return accepted_types.get(port_name) or {}
+
+    @property
+    def rejected_port_types(self):
+        """
+        Returns a dictionary of connection constrains of the port types
+        that are NOT allowed for a pipe connection to this node.
+
+        See Also:
+            :meth:`NodeGraphQt.BaseNode.rejected_port_types`
+
+        Returns:
+            dict: {<node_type>: {<port_type>: [<port_name>]}}
+        """
+        # return self.node.port_reject_connection_types(self)
+
+        port_name = self.name
+        port_type = self.dtype
+        node_type = self.node.dtype()
+
+        ports = self.node._inputs + self.node._outputs
+        if self not in ports:
+            raise PortError(f"Node does not contain port '{self}'")
+
+        data = (
+            self.node._model._graph_model.reject_connection_types.get(node_type) or {}
+        )
+        rejected_types = data.get(port_type) or {}
+        return rejected_types.get(port_name) or {}
+
+    @property
+    def color(self):
+        return self.__view.color
+
+    @color.setter
+    def color(self, color=(0, 0, 0, 255)):
+        self.__view.color = color
+
+    @property
+    def border_color(self):
+        return self.__view.border_color
+
+    @border_color.setter
+    def border_color(self, color=(0, 0, 0, 255)):
+        self.__view.border_color = color
+
+    def multi_connection(self):
+        """
+        Returns if the ports is a single connection or not.
+
+        Returns:
+            bool: false if port is a single connection port
+        """
+        return self.model.multi_connection
 
     def visible(self):
         """
@@ -147,7 +221,7 @@ class Port(object):
 
         undo_cmd = PortVisibleCmd(self, visible)
         if push_undo:
-            undo_stack = self.node().graph.undo_stack()
+            undo_stack = self.node.graph.undo_stack()
             undo_stack.push(undo_cmd)
         else:
             undo_cmd.redo()
@@ -199,7 +273,7 @@ class Port(object):
         if state == self.locked():
             return
 
-        graph = self.node().graph
+        graph = self.node.graph
         undo_stack = graph.undo_stack()
         if state:
             undo_cmd = PortLockedCmd(self)
@@ -221,13 +295,13 @@ class Port(object):
             list[NodeGraphQt.Port]: list of connected ports.
         """
         ports = []
-        graph = self.node().graph
+        graph = self.node.graph
         for node_id, port_names in self.model.connected_ports.items():
             for port_name in port_names:
                 node = graph.get_node_by_id(node_id)
-                if self.dtype() == PortTypeEnum.IN.value:
+                if self.dtype == PortTypeEnum.IN.value:
                     ports.append(node.outputs()[port_name])
-                elif self.dtype() == PortTypeEnum.OUT.value:
+                elif self.dtype == PortTypeEnum.OUT.value:
                     ports.append(node.inputs()[port_name])
         return ports
 
@@ -248,39 +322,39 @@ class Port(object):
             return
 
         if self.locked() or port.locked():
-            name = [p.name() for p in [self, port] if p.locked()][0]
+            name = [p.name for p in [self, port] if p.locked()][0]
             raise PortError(f"Can't connect port because '{name}' is locked.")
 
         # validate accept connection.
-        node_type = self.node().dtype
-        accepted_types = port.accepted_port_types().get(node_type)
+        node_type = self.node.dtype()
+        accepted_types = port.accepted_port_types.get(node_type)
         if accepted_types:
-            accepted_pnames = accepted_types.get(self.dtype()) or set([])
-            if self.name() not in accepted_pnames:
+            accepted_pnames = accepted_types.get(self.dtype) or set([])
+            if self.name not in accepted_pnames:
                 return
-        node_type = port.node().dtype
-        accepted_types = self.accepted_port_types().get(node_type)
+        node_type = port.node.dtype
+        accepted_types = self.accepted_port_types.get(node_type)
         if accepted_types:
-            accepted_pnames = accepted_types.get(port.dtype()) or set([])
-            if port.name() not in accepted_pnames:
+            accepted_pnames = accepted_types.get(port.dtype) or set([])
+            if port.name not in accepted_pnames:
                 return
 
         # validate reject connection.
-        node_type = self.node().dtype
-        rejected_types = port.rejected_port_types().get(node_type)
+        node_type = self.node.dtype()
+        rejected_types = port.rejected_port_types.get(node_type)
         if rejected_types:
-            rejected_pnames = rejected_types.get(self.dtype()) or set([])
-            if self.name() in rejected_pnames:
+            rejected_pnames = rejected_types.get(self.dtype) or set([])
+            if self.name in rejected_pnames:
                 return
-        node_type = port.node().dtype
-        rejected_types = self.rejected_port_types().get(node_type)
+        node_type = port.node.dtype
+        rejected_types = self.rejected_port_types.get(node_type)
         if rejected_types:
-            rejected_pnames = rejected_types.get(port.dtype()) or set([])
-            if port.name() in rejected_pnames:
+            rejected_pnames = rejected_types.get(port.dtype) or set([])
+            if port.name in rejected_pnames:
                 return
 
         # make the connection from here.
-        graph = self.node().graph
+        graph = self.node.graph
         viewer = graph.viewer()
 
         if push_undo:
@@ -355,10 +429,10 @@ class Port(object):
             return
 
         if self.locked() or port.locked():
-            name = [p.name() for p in [self, port] if p.locked()][0]
+            name = [p.name for p in [self, port] if p.locked()][0]
             raise PortError(f"Can't disconnect port because '{name}' is locked.")
 
-        graph = self.node().graph
+        graph = self.node.graph
         if push_undo:
             graph.undo_stack().beginMacro("disconnect port")
             graph.undo_stack().push(PortDisconnectedCmd(self, port, emit_signal))
@@ -384,13 +458,13 @@ class Port(object):
         """
         if self.locked():
             err = 'Can\'t clear connections because port "{}" is locked.'
-            raise PortError(err.format(self.name()))
+            raise PortError(err.format(self.name))
 
         if not self.connected_ports():
             return
 
         if push_undo:
-            graph = self.node().graph
+            graph = self.node.graph
             undo_stack = graph.undo_stack()
             undo_stack.beginMacro('"{}" clear connections')
             for cp in self.connected_ports():
@@ -400,105 +474,3 @@ class Port(object):
 
         for cp in self.connected_ports():
             self.disconnect_from(cp, push_undo=False, emit_signal=emit_signal)
-
-    def add_accept_port_type(self, port_name, port_type, node_type):
-        """
-        Add a constraint to "accept" a pipe connection.
-
-        Once a constraint has been added only ports of that type specified will
-        be allowed a pipe connection.
-
-        `Implemented in` ``v0.6.0``
-
-        See Also:
-            :meth:`NodeGraphQt.Port.add_reject_ports_type`,
-            :meth:`NodeGraphQt.BaseNode.add_accept_port_type`
-
-        Args:
-            port_name (str): name of the port.
-            port_type (str): port type.
-            node_type (str): port node type.
-        """
-        # storing the connection constrain at the graph level instead of the
-        # port level, so we don't serialize the same data for every port
-        # instance.
-        self.node().add_accept_port_type(
-            port=self,
-            port_type_data={
-                "port_name": port_name,
-                "port_type": port_type,
-                "node_type": node_type,
-            },
-        )
-
-    def accepted_port_types(self):
-        """
-        Returns a dictionary of connection constrains of the port types
-        that allow for a pipe connection to this node.
-
-        See Also:
-            :meth:`NodeGraphQt.BaseNode.accepted_port_types`
-
-        Returns:
-            dict: {<node_type>: {<port_type>: [<port_name>]}}
-        """
-        return self.node().accepted_port_types(self)
-
-    def add_reject_port_type(self, port_name, port_type, node_type):
-        """
-        Add a constraint to "reject" a pipe connection.
-
-        Once a constraint has been added only ports of that type specified will
-        be rejected a pipe connection.
-
-        `Implemented in` ``v0.6.0``
-
-        See Also:
-            :meth:`NodeGraphQt.Port.add_accept_ports_type`,
-            :meth:`NodeGraphQt.BaseNode.add_reject_port_type`
-
-        Args:
-            port_name (str): name of the port.
-            port_type (str): port type.
-            node_type (str): port node type.
-        """
-        # storing the connection constrain at the graph level instead of the
-        # port level, so we don't serialize the same data for every port
-        # instance.
-        self.node().add_reject_port_type(
-            port=self,
-            port_type_data={
-                "port_name": port_name,
-                "port_type": port_type,
-                "node_type": node_type,
-            },
-        )
-
-    def rejected_port_types(self):
-        """
-        Returns a dictionary of connection constrains of the port types
-        that are NOT allowed for a pipe connection to this node.
-
-        See Also:
-            :meth:`NodeGraphQt.BaseNode.rejected_port_types`
-
-        Returns:
-            dict: {<node_type>: {<port_type>: [<port_name>]}}
-        """
-        return self.node().rejected_port_types(self)
-
-    @property
-    def color(self):
-        return self.__view.color
-
-    @color.setter
-    def color(self, color=(0, 0, 0, 255)):
-        self.__view.color = color
-
-    @property
-    def border_color(self):
-        return self.__view.border_color
-
-    @border_color.setter
-    def border_color(self, color=(0, 0, 0, 255)):
-        self.__view.border_color = color

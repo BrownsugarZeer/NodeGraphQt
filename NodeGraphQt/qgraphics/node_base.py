@@ -32,30 +32,6 @@ class NodeItem(AbstractNodeItem):
         self._output_items = OrderedDict()
         self._widgets = OrderedDict()
 
-        # TODO: Deprecated for simplefy
-        # self._proxy_mode = False
-        # self._proxy_mode_threshold = 70
-
-    def post_init(self, viewer, pos=None):
-        """
-        Called after node has been added into the scene.
-
-        Args:
-            viewer (NodeGraphQt.widgets.viewer.NodeViewer): main viewer
-            pos (tuple): the cursor pos if node is called with tab search.
-        """
-        if self.layout_direction == LayoutDirectionEnum.VERTICAL.value:
-            font = QtGui.QFont()
-            font.setPointSize(15)
-            self.text_item.setFont(font)
-
-            # hide port text items for vertical layout.
-            if self.layout_direction is LayoutDirectionEnum.VERTICAL.value:
-                for text_item in self._input_items.values():
-                    text_item.setVisible(False)
-                for text_item in self._output_items.values():
-                    text_item.setVisible(False)
-
     def _paint_horizontal(self, painter, option, widget):
         painter.save()
         painter.setPen(QtCore.Qt.PenStyle.NoPen)
@@ -411,13 +387,15 @@ class NodeItem(AbstractNodeItem):
         rect = self.boundingRect()
         text_rect = self._text_item.boundingRect()
         x = rect.center().x() - (text_rect.width() / 2)
-        self._text_item.setPos(x + h_offset, rect.y() + v_offset)
+        y = rect.y()
+        self._text_item.setPos(x + h_offset, y + v_offset)
 
     def _align_label_vertical(self, h_offset, v_offset):
-        rect = self._text_item.boundingRect()
-        x = self.boundingRect().right() + h_offset
-        y = self.boundingRect().center().y() - (rect.height() / 2) + v_offset
-        self.text_item.setPos(x, y)
+        rect = self.boundingRect()
+        text_rect = self._text_item.boundingRect()
+        x = rect.right()
+        y = rect.center().y() - (text_rect.height() / 2)
+        self.text_item.setPos(x + h_offset, y + v_offset)
 
     def align_label(self, h_offset=0.0, v_offset=0.0):
         """
@@ -437,14 +415,15 @@ class NodeItem(AbstractNodeItem):
     def _align_widgets_horizontal(self, v_offset):
         if not self._widgets:
             return
+
         rect = self.boundingRect()
         y = rect.y() + v_offset
         inputs = [p for p in self.inputs if p.isVisible()]
         outputs = [p for p in self.outputs if p.isVisible()]
-        for widget in self._widgets.values():
-            if not widget.isVisible():
-                continue
+
+        for widget in filter(lambda w: w.isVisible(), self._widgets.values()):
             widget_rect = widget.boundingRect()
+
             if not inputs:
                 x = rect.left() + 10
                 widget.widget().setTitleAlign("left")
@@ -454,25 +433,23 @@ class NodeItem(AbstractNodeItem):
             else:
                 x = rect.center().x() - (widget_rect.width() / 2)
                 widget.widget().setTitleAlign("center")
+
             widget.setPos(x, y)
             y += widget_rect.height()
 
     def _align_widgets_vertical(self, v_offset):
         if not self._widgets:
             return
-        rect = self.boundingRect()
-        y = rect.center().y() + v_offset
-        widget_height = 0.0
-        for widget in self._widgets.values():
-            if not widget.isVisible():
-                continue
-            widget_rect = widget.boundingRect()
-            widget_height += widget_rect.height()
-        y -= widget_height / 2
 
-        for widget in self._widgets.values():
-            if not widget.isVisible():
-                continue
+        rect = self.boundingRect()
+        widget_height = sum(
+            widget.boundingRect().height()
+            for widget in self._widgets.values()
+            if widget.isVisible()
+        )
+        y = rect.center().y() + v_offset - (widget_height / 2)
+
+        for widget in filter(lambda w: w.isVisible(), self._widgets.values()):
             widget_rect = widget.boundingRect()
             x = rect.center().x() - (widget_rect.width() / 2)
             widget.widget().setTitleAlign("center")
@@ -494,69 +471,60 @@ class NodeItem(AbstractNodeItem):
             raise RuntimeError("Node graph layout direction not valid!")
 
     def _align_ports_horizontal(self, v_offset):
-        width = self._width
         txt_offset = PortEnum.CLICK_FALLOFF.value - 2
         spacing = 1
 
-        # adjust input position
-        inputs = [p for p in self.inputs if p.isVisible()]
-        if inputs:
-            port_width = inputs[0].boundingRect().width()
-            port_height = inputs[0].boundingRect().height()
-            port_x = (port_width / 2) * -1
-            port_y = v_offset
-            for port in inputs:
-                port.setPos(port_x, port_y)
-                port_y += port_height + spacing
-        # adjust input text position
-        for port, text in self._input_items.items():
-            if port.isVisible():
-                txt_x = port.boundingRect().width() / 2 - txt_offset
-                text.setPos(txt_x, port.y() - 1.5)
+        def _align_ports(ports, x_position):
+            y = v_offset
+            for port in ports:
+                port.setPos(x_position, y)
+                y += port.boundingRect().height() + spacing
 
-        # adjust output position
+        def _align_texts(port_items, offset_func):
+            for port, text in port_items.items():
+                if port.isVisible():
+                    txt_x = offset_func(port, text)
+                    text.setPos(txt_x, port.y() - 1.5)
+
+        inputs = [p for p in self.inputs if p.isVisible()]
         outputs = [p for p in self.outputs if p.isVisible()]
+
+        if inputs:
+            input_x = -inputs[0].boundingRect().width() / 2
+            _align_ports(inputs, input_x)
+            _align_texts(
+                self._input_items,
+                lambda port, text: port.boundingRect().width() / 2 - txt_offset,
+            )
+
         if outputs:
-            port_width = outputs[0].boundingRect().width()
-            port_height = outputs[0].boundingRect().height()
-            port_x = width - (port_width / 2)
-            port_y = v_offset
-            for port in outputs:
-                port.setPos(port_x, port_y)
-                port_y += port_height + spacing
-        # adjust output text position
-        for port, text in self._output_items.items():
-            if port.isVisible():
-                txt_width = text.boundingRect().width() - txt_offset
-                txt_x = port.x() - txt_width
-                text.setPos(txt_x, port.y() - 1.5)
+            output_x = self._width - outputs[0].boundingRect().width() / 2
+            _align_ports(outputs, output_x)
+            _align_texts(
+                self._output_items,
+                lambda port, text: port.x() - text.boundingRect().width() + txt_offset,
+            )
 
     def _align_ports_vertical(self, v_offset):
-        # adjust input position
-        inputs = [p for p in self.inputs if p.isVisible()]
-        if inputs:
-            port_width = inputs[0].boundingRect().width()
-            port_height = inputs[0].boundingRect().height()
-            half_width = port_width / 2
-            delta = self._width / (len(inputs) + 1)
+        def _align_ports(ports, y_position):
+            if not ports:
+                return
+            delta = self._width / (len(ports) + 1)
             port_x = delta
-            port_y = (port_height / 2) * -1
-            for port in inputs:
-                port.setPos(port_x - half_width, port_y)
+            for port in ports:
+                port.setPos(port_x - port.boundingRect().width() / 2, y_position)
                 port_x += delta
 
-        # adjust output position
+        inputs = [p for p in self.inputs if p.isVisible()]
         outputs = [p for p in self.outputs if p.isVisible()]
+
+        if inputs:
+            input_y = -inputs[0].boundingRect().height() / 2
+            _align_ports(inputs, input_y)
+
         if outputs:
-            port_width = outputs[0].boundingRect().width()
-            port_height = outputs[0].boundingRect().height()
-            half_width = port_width / 2
-            delta = self._width / (len(outputs) + 1)
-            port_x = delta
-            port_y = self._height - (port_height / 2)
-            for port in outputs:
-                port.setPos(port_x - half_width, port_y)
-                port_x += delta
+            output_y = self._height - outputs[0].boundingRect().height() / 2
+            _align_ports(outputs, output_y)
 
     def align_ports(self, v_offset=0.0):
         """
@@ -655,83 +623,10 @@ class NodeItem(AbstractNodeItem):
         if pos:
             self.xy_pos = pos
 
-    # TODO: Deprecated for simplefy
-    # def auto_switch_mode(self):
-    #     """
-    #     Decide whether to draw the node with proxy mode.
-    #     (this is called at the start in the "self.paint()" function.)
-    #     """
-    #     if ITEM_CACHE_MODE is QtWidgets.QGraphicsItem.ItemCoordinateCache:
-    #         return
-
-    #     rect = self.sceneBoundingRect()
-    #     l = self.viewer().mapToGlobal(self.viewer().mapFromScene(rect.topLeft()))
-    #     r = self.viewer().mapToGlobal(self.viewer().mapFromScene(rect.topRight()))
-    #     # width is the node width in screen
-    #     width = r.x() - l.x()
-
-    #     self.set_proxy_mode(width < self._proxy_mode_threshold)
-
-    # TODO: Deprecated for simplefy
-    # def set_proxy_mode(self, mode):
-    #     """
-    #     Set whether to draw the node with proxy mode.
-    #     (proxy mode toggles visibility for some qgraphic items in the node.)
-
-    #     Args:
-    #         mode (bool): true to enable proxy mode.
-    #     """
-    #     if mode is self._proxy_mode:
-    #         return
-    #     self._proxy_mode = mode
-
-    #     visible = not mode
-
-    #     # disable overlay item.
-    #     self._x_item.proxy_mode = self._proxy_mode
-
-    #     # node widget visibility.
-    #     for w in self._widgets.values():
-    #         w.widget().setVisible(visible)
-
-    #     # port text is not visible in vertical layout.
-    #     if self.layout_direction is LayoutDirectionEnum.VERTICAL.value:
-    #         port_text_visible = False
-    #     else:
-    #         port_text_visible = visible
-
-    #     # input port text visibility.
-    #     for port, text in self._input_items.items():
-    #         if port.display_name:
-    #             text.setVisible(port_text_visible)
-
-    #     # output port text visibility.
-    #     for port, text in self._output_items.items():
-    #         if port.display_name:
-    #             text.setVisible(port_text_visible)
-
-    #     self._text_item.setVisible(visible)
-    #     # self._icon_item.setVisible(visible)  # TODO: Deprecated for simplefy
-
     @AbstractNodeItem.layout_direction.setter
     def layout_direction(self, value=0):
         AbstractNodeItem.layout_direction.fset(self, value)
         self.draw_node()
-
-    # TODO: Deprecated for simplefy
-    # @AbstractNodeItem.width.setter
-    # def width(self, width=0.0):
-    #     w, h = self.calc_size()
-    #     width = width if width > w else w
-    #     AbstractNodeItem.width.fset(self, width)
-
-    # TODO: Deprecated for simplefy
-    # @AbstractNodeItem.height.setter
-    # def height(self, height=0.0):
-    #     w, h = self.calc_size()
-    #     h = 70 if h < 70 else h
-    #     height = height if height > h else h
-    #     AbstractNodeItem.height.fset(self, height)
 
     @AbstractNodeItem.disabled.setter
     def disabled(self, state=False):
@@ -739,13 +634,6 @@ class NodeItem(AbstractNodeItem):
         for n, w in self._widgets.items():
             w.widget().setDisabled(state)
         self._tooltip_disable(state)
-
-    # TODO: Deprecated for simplefy
-    # @AbstractNodeItem.selected.setter
-    # def selected(self, selected=False):
-    #     AbstractNodeItem.selected.fset(self, selected)
-    #     if selected:
-    #         self.highlight_pipes()
 
     @AbstractNodeItem.name.setter
     def name(self, name=""):
@@ -756,14 +644,6 @@ class NodeItem(AbstractNodeItem):
         if self.scene():
             self.align_label()
         self.update()
-
-    # TODO: Deprecated for simplefy
-    # @AbstractNodeItem.color.setter
-    # def color(self, color=(100, 100, 100, 255)):
-    #     AbstractNodeItem.color.fset(self, color)
-    #     if self.scene():
-    #         self.scene().update()
-    #     self.update()
 
     @property
     def text_item(self):

@@ -14,7 +14,7 @@ class AbstractNodeItem(QtWidgets.QGraphicsItem):
     """
 
     def __init__(self, name="node", parent=None):
-        super(AbstractNodeItem, self).__init__(parent)
+        super().__init__(parent)
         self.setFlags(
             QtWidgets.QGraphicsItem.GraphicsItemFlag.ItemIsSelectable
             | QtWidgets.QGraphicsItem.GraphicsItemFlag.ItemIsMovable
@@ -49,11 +49,7 @@ class AbstractNodeItem(QtWidgets.QGraphicsItem):
             event (QtWidgets.QGraphicsSceneMouseEvent): mouse event.
         """
         self._properties["selected"] = True
-        super(AbstractNodeItem, self).mousePressEvent(event)
-
-    def setSelected(self, selected):
-        self._properties["selected"] = selected
-        super(AbstractNodeItem, self).setSelected(selected)
+        super().mousePressEvent(event)
 
     def draw_node(self):
         """
@@ -109,10 +105,6 @@ class AbstractNodeItem(QtWidgets.QGraphicsItem):
         self._properties["layout_direction"] = value
 
     @property
-    def size(self):
-        return self._width, self._height
-
-    @property
     def width(self):
         return self._width
 
@@ -160,6 +152,7 @@ class AbstractNodeItem(QtWidgets.QGraphicsItem):
 
     @selected.setter
     def selected(self, selected=False):
+        self._properties["selected"] = selected
         self.setSelected(selected)
 
     @property
@@ -181,7 +174,7 @@ class AbstractNodeItem(QtWidgets.QGraphicsItem):
         Returns:
             list[float]: x, y scene position.
         """
-        return [float(self.scenePos().x()), float(self.scenePos().y())]
+        return [self.scenePos().x(), self.scenePos().y()]
 
     @xy_pos.setter
     def xy_pos(self, pos=None):
@@ -203,7 +196,6 @@ class AbstractNodeItem(QtWidgets.QGraphicsItem):
     @name.setter
     def name(self, name=""):
         self._properties["name"] = name
-        self.setToolTip(f"node: {name}")
 
     @property
     def properties(self):
