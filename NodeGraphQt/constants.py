@@ -24,7 +24,6 @@ ICON_NODE_BASE = os.path.join(ICON_PATH, "node_base.png")
 ICON_NODE_ADJUST = os.path.join(ICON_PATH, "node_adjust.png")
 
 # DRAW STACK ORDER
-Z_VAL_BACKDROP = -2
 Z_VAL_PIPE = -1
 Z_VAL_NODE = 1
 Z_VAL_PORT = 2

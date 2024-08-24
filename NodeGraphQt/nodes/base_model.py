@@ -1,19 +1,14 @@
-import json
 from typing import List, Dict, Tuple, Optional
 from uuid import uuid4
 from pydantic import BaseModel, Field, ConfigDict
-from NodeGraphQt.base.commands import PropertyChangedCmd
+
 from NodeGraphQt.constants import (
     LayoutDirectionEnum,
     NodePropWidgetEnum,
 )
 from NodeGraphQt.errors import NodePropertyError
-from icecream import ic
-
-from NodeGraphQt.qgraphics.node_base import NodeItem
+from NodeGraphQt.nodes.base_item import NodeItem
 from NodeGraphQt.base.model import NodeGraphModel
-
-from NodeGraphQt.constants import NodePropWidgetEnum
 
 
 class NodeModel(BaseModel):
@@ -104,7 +99,7 @@ class NodeModel(BaseModel):
 
         if name in self.properties:
             raise NodePropertyError(f"'{name}' reserved for default property.")
-        if name in self._custom_prop.keys():
+        if name in self._custom_prop:
             raise NodePropertyError(f"'{name}' property already exists.")
 
         self._custom_prop[name] = value
@@ -137,7 +132,7 @@ class NodeModel(BaseModel):
         """
         if name in self.properties:
             self.properties[name] = value
-        elif name in self._custom_prop.keys():
+        elif name in self._custom_prop:
             self._custom_prop[name] = value
         else:
             raise NodePropertyError(f"No property '{name}'")

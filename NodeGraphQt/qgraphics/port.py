@@ -9,7 +9,7 @@ class PortItem(QtWidgets.QGraphicsItem):
     """
 
     def __init__(self, parent=None):
-        super(PortItem, self).__init__(parent)
+        super().__init__(parent)
         self.setAcceptHoverEvents(True)
         self.setCacheMode(ITEM_CACHE_MODE)
         self.setFlag(QtWidgets.QGraphicsItem.GraphicsItemFlag.ItemIsSelectable, False)
@@ -117,15 +117,15 @@ class PortItem(QtWidgets.QGraphicsItem):
             == QtWidgets.QGraphicsItem.GraphicsItemChange.ItemScenePositionHasChanged
         ):
             self.redraw_connected_pipes()
-        return super(PortItem, self).itemChange(change, value)
+        return super().itemChange(change, value)
 
     def hoverEnterEvent(self, event):
         self._hovered = True
-        super(PortItem, self).hoverEnterEvent(event)
+        super().hoverEnterEvent(event)
 
     def hoverLeaveEvent(self, event):
         self._hovered = False
-        super(PortItem, self).hoverLeaveEvent(event)
+        super().hoverLeaveEvent(event)
 
     def viewer_start_connection(self):
         viewer = self.scene().viewer()
@@ -278,7 +278,7 @@ class CustomPortItem(PortItem):
     """
 
     def __init__(self, parent=None, paint_func=None):
-        super(CustomPortItem, self).__init__(parent)
+        super().__init__(parent)
         self._port_painter = paint_func
 
     def set_painter(self, func=None):
@@ -317,4 +317,4 @@ class CustomPortItem(PortItem):
             }
             self._port_painter(painter, port_rect, port_info)
         else:
-            super(CustomPortItem, self).paint(painter, option, widget)
+            super().paint(painter, option, widget)

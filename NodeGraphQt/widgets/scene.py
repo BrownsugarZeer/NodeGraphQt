@@ -6,7 +6,7 @@ from NodeGraphQt.constants import ViewerEnum
 class NodeScene(QtWidgets.QGraphicsScene):
 
     def __init__(self, parent=None):
-        super(NodeScene, self).__init__(parent)
+        super().__init__(parent)
         self._grid_mode = ViewerEnum.GRID_DISPLAY_LINES.value
         self._grid_color = ViewerEnum.GRID_COLOR.value
         self._bg_color = ViewerEnum.BACKGROUND_COLOR.value
@@ -92,7 +92,7 @@ class NodeScene(QtWidgets.QGraphicsScene):
         ]
 
     def drawBackground(self, painter, rect):
-        super(NodeScene, self).drawBackground(painter, rect)
+        super().drawBackground(painter, rect)
 
         painter.save()
         painter.setRenderHint(QtGui.QPainter.RenderHint.Antialiasing, False)
@@ -120,7 +120,7 @@ class NodeScene(QtWidgets.QGraphicsScene):
         selected_nodes = self.viewer().selected_nodes()
         if self.viewer():
             self.viewer().sceneMousePressEvent(event)
-        super(NodeScene, self).mousePressEvent(event)
+        super().mousePressEvent(event)
         keep_selection = any(
             [
                 event.button() == QtCore.Qt.MouseButton.MiddleButton,
@@ -135,12 +135,12 @@ class NodeScene(QtWidgets.QGraphicsScene):
     def mouseMoveEvent(self, event):
         if self.viewer():
             self.viewer().sceneMouseMoveEvent(event)
-        super(NodeScene, self).mouseMoveEvent(event)
+        super().mouseMoveEvent(event)
 
     def mouseReleaseEvent(self, event):
         if self.viewer():
             self.viewer().sceneMouseReleaseEvent(event)
-        super(NodeScene, self).mouseReleaseEvent(event)
+        super().mouseReleaseEvent(event)
 
     def viewer(self):
         return self.views()[0] if self.views() else None

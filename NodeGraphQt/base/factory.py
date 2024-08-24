@@ -1,7 +1,7 @@
 from typing import Optional
 
 from NodeGraphQt.errors import NodeRegistrationError
-from NodeGraphQt.base.node import NodeObject
+from NodeGraphQt.nodes.base_model import NodeObject
 
 
 class NodeFactory(object):

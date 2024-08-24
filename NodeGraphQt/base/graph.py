@@ -15,7 +15,7 @@ from NodeGraphQt.base.commands import (
 from NodeGraphQt.base.factory import NodeFactory
 from NodeGraphQt.base.menu import NodeGraphMenu, NodesMenu
 from NodeGraphQt.base.model import NodeGraphModel
-from NodeGraphQt.base.node import NodeObject
+from NodeGraphQt.nodes.base_model import NodeObject
 from NodeGraphQt.base.port import Port
 from NodeGraphQt.constants import (
     MIME_TYPE,
@@ -27,8 +27,7 @@ from NodeGraphQt.constants import (
     ViewerEnum,
 )
 
-# from NodeGraphQt.nodes.backdrop_node import BackdropNode
-from NodeGraphQt.nodes.base_node import BaseNode
+from NodeGraphQt.nodes.base import BaseNode
 from NodeGraphQt.widgets.node_graph import NodeGraphWidget
 from NodeGraphQt.widgets.viewer import NodeViewer
 
@@ -140,7 +139,7 @@ class NodeGraph(QtCore.QObject):
             parent (object): object parent.
             **kwargs (dict): Used for overriding internal objects at init time.
         """
-        super(NodeGraph, self).__init__(parent)
+        super().__init__(parent)
         self.setObjectName("NodeGraph")
         self._model = kwargs.get("model") or NodeGraphModel()
         self._node_factory = kwargs.get("node_factory") or NodeFactory()
@@ -197,13 +196,6 @@ class NodeGraph(QtCore.QObject):
         if menus.get("nodes"):
             self._context_menu["nodes"] = NodesMenu(self, menus["nodes"])
 
-    # TODO: drop node Not ready yet.
-    # def _register_builtin_nodes(self):
-    #     """
-    #     Register the default builtin nodes to the :meth:`NodeGraph.node_factory`
-    #     """
-    #     self.register_node(BackdropNode, alias="Backdrop")
-
     def _wire_signals(self):
         """
         Connect up all the signals and slots here.
@@ -216,8 +208,6 @@ class NodeGraph(QtCore.QObject):
         self._viewer.moved_nodes.connect(self._on_nodes_moved)
         self._viewer.node_double_clicked.connect(self._on_node_double_clicked)
         self._viewer.node_name_changed.connect(self._on_node_name_changed)
-        # TODO: drop node Not ready yet.
-        # self._viewer.node_backdrop_updated.connect(self._on_node_backdrop_updated)
         self._viewer.insert_node.connect(self._on_insert_node)
 
         # pass through translated signals.
@@ -386,19 +376,6 @@ class NodeGraph(QtCore.QObject):
             # TODO: n.x_pos(), n.y_pos() -> n.view.xy_pos
             self._undo_stack.push(NodeMovedCmd(node, node.view.xy_pos, prev_pos))
         self._undo_stack.endMacro()
-
-    # TODO: drop node Not ready yet.
-    # def _on_node_backdrop_updated(self, node_id, update_property, value):
-    #     """
-    #     called when a BackdropNode is updated.
-
-    #     Args:
-    #         node_id (str): backdrop node id.
-    #         value (str): update type.
-    #     """
-    #     backdrop = self.get_node_by_id(node_id)
-    #     if backdrop and isinstance(backdrop, BackdropNode):
-    #         backdrop.on_backdrop_updated(update_property, value)
 
     def _on_search_triggered(self, node_type, pos):
         """
@@ -2107,22 +2084,14 @@ class NodeGraph(QtCore.QObject):
 
         nodes = nodes or self.all_nodes()
 
-        # TODO: drop node Not ready yet.
-        # filter out the backdrops.
-        # backdrops = {n: n.nodes() for n in nodes if isinstance(n, BackdropNode)}
-        # filtered_nodes = [n for n in nodes if not isinstance(n, BackdropNode)]
-        filtered_nodes = nodes
-
         start_nodes = start_nodes or []
         if down_stream:
             start_nodes += [
-                n for n in filtered_nodes if not any(n.connected_input_nodes().values())
+                n for n in nodes if not any(n.connected_input_nodes().values())
             ]
         else:
             start_nodes += [
-                n
-                for n in filtered_nodes
-                if not any(n.connected_output_nodes().values())
+                n for n in nodes if not any(n.connected_output_nodes().values())
             ]
 
         if not start_nodes:
@@ -2184,11 +2153,6 @@ class NodeGraph(QtCore.QObject):
             # TODO: self.set_pos() -> self.view.xy_pos
             x_pos, y_pos = n.view.xy_pos
             n.view.xy_pos = (x_pos + dx, y_pos + dy)
-
-        # TODO: drop node Not ready yet.
-        # wrap the backdrop nodes.
-        # for backdrop, contained_nodes in backdrops.items():
-        #     backdrop.wrap_nodes(contained_nodes)
 
         self.end_undo()
 

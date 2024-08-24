@@ -1,5 +1,7 @@
-
 # NodeGraphQt (for Qt6)
+
+> [!NOTE]  
+> This fork is to SIMPLIFY and FOCUS on the "node editor" itself, removing functionality other than basic node. And refactor some heavy functions, and hope to use pydantic and type hints to improve the code readability and maintainability.
 
 [![API Documentation](https://github.com/jchanvfx/NodeGraphQt/actions/workflows/sphinx_doc_build.yml/badge.svg)](https://github.com/jchanvfx/NodeGraphQt/actions/workflows/sphinx_doc_build.yml)
 [![PyPI Package](https://github.com/jchanvfx/NodeGraphQt/actions/workflows/pypi_publish.yml/badge.svg)](https://github.com/jchanvfx/NodeGraphQt/actions/workflows/pypi_publish.yml)

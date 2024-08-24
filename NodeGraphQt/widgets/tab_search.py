@@ -13,7 +13,7 @@ class TabSearchCompleter(QtWidgets.QCompleter):
     """
 
     def __init__(self, nodes=None, parent=None):
-        super(TabSearchCompleter, self).__init__(nodes, parent)
+        super().__init__(nodes, parent)
         self.setCompletionMode(self.CompletionMode.PopupCompletion)
         self.setCaseSensitivity(QtCore.Qt.CaseSensitivity.CaseInsensitive)
         self._local_completion_prefix = ""
@@ -49,7 +49,7 @@ class TabSearchCompleter(QtWidgets.QCompleter):
         self._source_model = model
         self._filter_model = QtCore.QSortFilterProxyModel(self)
         self._filter_model.setSourceModel(self._source_model)
-        super(TabSearchCompleter, self).setModel(self._filter_model)
+        super().setModel(self._filter_model)
         self._using_orig_model = True
 
 
@@ -58,7 +58,7 @@ class TabSearchLineEditWidget(QtWidgets.QLineEdit):
     tab_pressed = QtCore.Signal()
 
     def __init__(self, parent=None):
-        super(TabSearchLineEditWidget, self).__init__(parent)
+        super().__init__(parent)
         self.setAttribute(QtCore.Qt.WidgetAttribute.WA_MacShowFocusRect, 0)
         self.setMinimumSize(200, 22)
         # text_color = self.palette().text().color().getRgb()
@@ -91,7 +91,7 @@ class TabSearchLineEditWidget(QtWidgets.QLineEdit):
         self.setStyleSheet(stylesheet)
 
     def keyPressEvent(self, event):
-        super(TabSearchLineEditWidget, self).keyPressEvent(event)
+        super().keyPressEvent(event)
         if event.key() == QtCore.Qt.Key.Key_Tab:
             self.tab_pressed.emit()
 
@@ -101,7 +101,7 @@ class TabSearchMenuWidget(QtWidgets.QMenu):
     search_submitted = QtCore.Signal(str)
 
     def __init__(self, node_dict=None):
-        super(TabSearchMenuWidget, self).__init__()
+        super().__init__()
 
         self.line_edit = TabSearchLineEditWidget()
         self.line_edit.tab_pressed.connect(self._close)
@@ -165,7 +165,7 @@ class TabSearchMenuWidget(QtWidgets.QMenu):
         return "<{} at {}>".format(self.__class__.__name__, hex(id(self)))
 
     def keyPressEvent(self, event):
-        super(TabSearchMenuWidget, self).keyPressEvent(event)
+        super().keyPressEvent(event)
         self.line_edit.keyPressEvent(event)
 
     @staticmethod

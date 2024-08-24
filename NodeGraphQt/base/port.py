@@ -12,7 +12,7 @@ from NodeGraphQt.base.commands import (
     NodeInputDisconnectedCmd,
 )
 
-from NodeGraphQt.base.node import NodeObject
+from NodeGraphQt.nodes.base_model import NodeObject
 from NodeGraphQt.constants import PortTypeEnum
 from NodeGraphQt.errors import PortError
 
@@ -54,7 +54,7 @@ class Port:
         port (PortItem): graphic item used for drawing.
     """
 
-    def __init__(self, node, port):
+    def __init__(self, node, port: "Port"):
         self.__view = port
         self.__model = PortModel(node=node)
 
@@ -129,7 +129,6 @@ class Port:
         Returns:
             dict: {<node_type>: {<port_type>: [<port_name>]}}
         """
-        # return self.node.port_accept_connection_types(self)
         port_name = self.name
         port_type = self.dtype
         node_type = self.node.dtype()
@@ -156,8 +155,6 @@ class Port:
         Returns:
             dict: {<node_type>: {<port_type>: [<port_name>]}}
         """
-        # return self.node.port_reject_connection_types(self)
-
         port_name = self.name
         port_type = self.dtype
         node_type = self.node.dtype()

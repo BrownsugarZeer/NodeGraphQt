@@ -5,13 +5,17 @@ from NodeGraphQt.base.commands import (
     NodeWidgetVisibleCmd,
     PropertyChangedCmd,
 )
-from NodeGraphQt.base.node import NodeObject
+from NodeGraphQt.nodes.base_model import NodeObject
 from NodeGraphQt.base.port import Port
 from NodeGraphQt.constants import (
     NodePropWidgetEnum,
     PortTypeEnum,
 )
-from NodeGraphQt.errors import PortError, PortRegistrationError, NodeWidgetError
+from NodeGraphQt.errors import (
+    PortError,
+    PortRegistrationError,
+    NodeWidgetError,
+)
 from NodeGraphQt.widgets.node_widgets import (
     NodeBaseWidget,
     NodeCheckBox,
@@ -46,7 +50,7 @@ class BaseNode(NodeObject):
             NODE_NAME = 'My Node'
 
             def __init__(self):
-                super(ExampleNode, self).__init__()
+                super().__init__()
 
                 # create an input port.
                 self.add_input('in')
@@ -106,7 +110,7 @@ class BaseNode(NodeObject):
                 for pipe in port.connected_pipes:
                     pipe.update()
 
-        # super(BaseNode, self).set_property(name, value, push_undo)
+        # super().set_property(name, value, push_undo)
         # prevent nodes from have the same name.
         if self.graph:
             if name == "name":

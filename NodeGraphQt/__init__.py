@@ -19,7 +19,7 @@ example code:
         NODE_NAME = 'My Node'
 
         def __init__(self):
-            super(MyNode, self).__init__()
+            super().__init__()
             self.add_input('foo', color=(180, 80, 0))
             self.add_output('bar')
 
@@ -28,9 +28,7 @@ example code:
         graph = NodeGraph()
 
         graph.register_node(BaseNode)
-        graph.register_node(BackdropNode)
 
-        backdrop = graph.create_node('nodeGraphQt.nodes.Backdrop', name='Backdrop')
         node_a = graph.create_node('io.github.jchanvfx.MyNode', name='Node A')
         node_b = graph.create_node('io.github.jchanvfx.MyNode', name='Node B', color='#5b162f')
 
@@ -45,36 +43,14 @@ example code:
 from .pkg_info import __version__ as VERSION
 from .pkg_info import __license__ as LICENSE
 
-# node graph
-from .base.graph import NodeGraph
-from .base.menu import NodesMenu, NodeGraphMenu, NodeGraphCommand
+from NodeGraphQt import base  # noqa
+from NodeGraphQt import nodes  # noqa
+from NodeGraphQt import qgraphics  # noqa
+from NodeGraphQt import widgets  # noqa
 
-# nodes & ports
-from .base.port import Port
-from .base.node import NodeObject
-from .nodes.base_node import BaseNode
-
-# from .nodes.backdrop_node import BackdropNode
-
-# widgets
-from .widgets.node_widgets import NodeBaseWidget
 
 from icecream import install
 
 install()
 
 __version__ = VERSION
-__all__ = [
-    # "BackdropNode",
-    "BaseNode",
-    "LICENSE",
-    "NodeBaseWidget",
-    "NodeGraph",
-    "NodeGraphCommand",
-    "NodeGraphMenu",
-    "NodeObject",
-    "NodesMenu",
-    "Port",
-    "VERSION",
-    "constants",
-]

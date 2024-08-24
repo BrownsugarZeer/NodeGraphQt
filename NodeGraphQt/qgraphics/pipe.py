@@ -9,14 +9,14 @@ from NodeGraphQt.constants import (
     PortTypeEnum,
     ITEM_CACHE_MODE,
     Z_VAL_PIPE,
-    Z_VAL_NODE_WIDGET
+    Z_VAL_NODE_WIDGET,
 )
 from NodeGraphQt.qgraphics.port import PortItem
 
 PIPE_STYLES = {
     PipeEnum.DRAW_TYPE_DEFAULT.value: QtCore.Qt.PenStyle.SolidLine,
     PipeEnum.DRAW_TYPE_DASHED.value: QtCore.Qt.PenStyle.DashLine,
-    PipeEnum.DRAW_TYPE_DOTTED.value: QtCore.Qt.PenStyle.DotLine
+    PipeEnum.DRAW_TYPE_DOTTED.value: QtCore.Qt.PenStyle.DotLine,
 }
 
 
@@ -26,7 +26,7 @@ class PipeItem(QtWidgets.QGraphicsPathItem):
     """
 
     def __init__(self, input_port=None, output_port=None):
-        super(PipeItem, self).__init__()
+        super().__init__()
         self.setZValue(Z_VAL_PIPE)
         self.setAcceptHoverEvents(True)
         self.setFlag(QtWidgets.QGraphicsItem.ItemIsSelectable)
@@ -54,10 +54,9 @@ class PipeItem(QtWidgets.QGraphicsPathItem):
         self.reset()
 
     def __repr__(self):
-        in_name = self._input_port.name if self._input_port else ''
-        out_name = self._output_port.name if self._output_port else ''
-        return '{}.Pipe(\'{}\', \'{}\')'.format(
-            self.__module__, in_name, out_name)
+        in_name = self._input_port.name if self._input_port else ""
+        out_name = self._output_port.name if self._output_port else ""
+        return f"{self.__module__}.Pipe('{in_name}', '{out_name}')"
 
     def hoverEnterEvent(self, event):
         self.activate()
@@ -73,12 +72,15 @@ class PipeItem(QtWidgets.QGraphicsPathItem):
             self.highlight()
 
     def itemChange(self, change, value):
-        if change == QtWidgets.QGraphicsPathItem.GraphicsItemChange.ItemSelectedChange and self.scene():
+        if (
+            change == QtWidgets.QGraphicsPathItem.GraphicsItemChange.ItemSelectedChange
+            and self.scene()
+        ):
             if value:
                 self.highlight()
             else:
                 self.reset()
-        return super(PipeItem, self).itemChange(change, value)
+        return super().itemChange(change, value)
 
     def paint(self, painter, option, widget):
         """
@@ -132,8 +134,7 @@ class PipeItem(QtWidgets.QGraphicsPathItem):
         self._dir_pointer.setVisible(True)
         loc_pt = self.path().pointAtPercent(0.49)
         tgt_pt = self.path().pointAtPercent(0.51)
-        radians = math.atan2(tgt_pt.y() - loc_pt.y(),
-                             tgt_pt.x() - loc_pt.x())
+        radians = math.atan2(tgt_pt.y() - loc_pt.y(), tgt_pt.x() - loc_pt.x())
         degrees = math.degrees(radians) - 90
         self._dir_pointer.setRotation(degrees)
         self._dir_pointer.setPos(self.path().pointAtPercent(0.5))
@@ -230,7 +231,7 @@ class PipeItem(QtWidgets.QGraphicsPathItem):
             self.setPath(path)
         elif self.viewer_pipe_layout() == PipeLayoutEnum.ANGLE.value:
             ctr_offset_y1, ctr_offset_y2 = pos1.y(), pos2.y()
-            distance = abs(ctr_offset_y1 - ctr_offset_y2)/2
+            distance = abs(ctr_offset_y1 - ctr_offset_y2) / 2
             if start_port.port_type == PortTypeEnum.IN.value:
                 ctr_offset_y1 -= distance
                 ctr_offset_y2 += distance
@@ -317,12 +318,14 @@ class PipeItem(QtWidgets.QGraphicsPathItem):
 
         # visibility check for connected pipe.
         if self.input_port and self.output_port:
-            is_visible = all([
-                self._input_port.isVisible(),
-                self._output_port.isVisible(),
-                self._input_port.node.isVisible(),
-                self._output_port.node.isVisible()
-            ])
+            is_visible = all(
+                [
+                    self._input_port.isVisible(),
+                    self._output_port.isVisible(),
+                    self._input_port.node.isVisible(),
+                    self._output_port.node.isVisible(),
+                ]
+            )
             self.setVisible(is_visible)
 
             # don't draw pipe if a port or node is not visible.
@@ -337,15 +340,11 @@ class PipeItem(QtWidgets.QGraphicsPathItem):
         if end_port and not self.viewer().acyclic:
             if end_port.node == start_port.node:
                 if direction is LayoutDirectionEnum.VERTICAL.value:
-                    self._draw_path_cycled_vertical(
-                        start_port, pos1, pos2, path
-                    )
+                    self._draw_path_cycled_vertical(start_port, pos1, pos2, path)
                     self._draw_direction_pointer()
                     return
                 elif direction is LayoutDirectionEnum.HORIZONTAL.value:
-                    self._draw_path_cycled_horizontal(
-                        start_port, pos1, pos2, path
-                    )
+                    self._draw_path_cycled_horizontal(start_port, pos1, pos2, path)
                     self._draw_direction_pointer()
                     return
 
@@ -446,7 +445,7 @@ class PipeItem(QtWidgets.QGraphicsPathItem):
         self.set_pipe_styling(
             color=PipeEnum.ACTIVE_COLOR.value,
             width=3,
-            style=PipeEnum.DRAW_TYPE_DEFAULT.value
+            style=PipeEnum.DRAW_TYPE_DEFAULT.value,
         )
 
     def active(self):
@@ -457,7 +456,7 @@ class PipeItem(QtWidgets.QGraphicsPathItem):
         self.set_pipe_styling(
             color=PipeEnum.HIGHLIGHT_COLOR.value,
             width=2,
-            style=PipeEnum.DRAW_TYPE_DEFAULT.value
+            style=PipeEnum.DRAW_TYPE_DEFAULT.value,
         )
 
     def highlighted(self):
@@ -478,10 +477,7 @@ class PipeItem(QtWidgets.QGraphicsPathItem):
             port1 (PortItem): port item object.
             port2 (PortItem): port item object.
         """
-        ports = {
-            port1.port_type: port1,
-            port2.port_type: port2
-        }
+        ports = {port1.port_type: port1, port2.port_type: port2}
         self.input_port = ports[PortTypeEnum.IN.value]
         self.output_port = ports[PortTypeEnum.OUT.value]
         ports[PortTypeEnum.IN.value].add_pipe(self)
@@ -551,7 +547,7 @@ class LivePipeItem(PipeItem):
     """
 
     def __init__(self):
-        super(LivePipeItem, self).__init__()
+        super().__init__()
         self.setZValue(Z_VAL_NODE_WIDGET + 1)
 
         self.color = PipeEnum.ACTIVE_COLOR.value
@@ -595,7 +591,7 @@ class LivePipeItem(PipeItem):
                 will be the draw end point.
             color (list[int]): override arrow index pointer color. (r, g, b)
         """
-        super(LivePipeItem, self).draw_path(start_port, end_port, cursor_pos)
+        super().draw_path(start_port, end_port, cursor_pos)
         self.draw_index_pointer(start_port, cursor_pos, color)
 
     def draw_index_pointer(self, start_port, cursor_pos, color=None):
@@ -615,21 +611,21 @@ class LivePipeItem(PipeItem):
         if self.viewer_layout_direction() is LayoutDirectionEnum.VERTICAL.value:
             text_pos = (
                 cursor_pos.x() + (text_rect.width() / 2.5),
-                cursor_pos.y() - (text_rect.height() / 2)
+                cursor_pos.y() - (text_rect.height() / 2),
             )
             if start_port.port_type == PortTypeEnum.OUT.value:
                 transform.rotate(180)
         elif self.viewer_layout_direction() is LayoutDirectionEnum.HORIZONTAL.value:
             text_pos = (
                 cursor_pos.x() - (text_rect.width() / 2),
-                cursor_pos.y() - (text_rect.height() * 1.25)
+                cursor_pos.y() - (text_rect.height() * 1.25),
             )
             if start_port.port_type == PortTypeEnum.IN.value:
                 transform.rotate(-90)
             else:
                 transform.rotate(90)
         self._idx_text.setPos(*text_pos)
-        self._idx_text.setPlainText('{}'.format(start_port.name))
+        self._idx_text.setPlainText("{}".format(start_port.name))
 
         self._idx_pointer.setPolygon(transform.map(self._poly))
 
@@ -649,7 +645,7 @@ class LivePipePolygonItem(QtWidgets.QGraphicsPolygonItem):
     """
 
     def __init__(self, parent):
-        super(LivePipePolygonItem, self).__init__(parent)
+        super().__init__(parent)
         self.setFlag(QtWidgets.QGraphicsItem.ItemIsSelectable, True)
 
     def paint(self, painter, option, widget):

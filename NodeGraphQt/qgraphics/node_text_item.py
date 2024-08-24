@@ -24,7 +24,7 @@ class NodeTextItem(QtWidgets.QGraphicsTextItem):
                 self.set_editable(True)
                 event.ignore()
                 return
-        super(NodeTextItem, self).mouseDoubleClickEvent(event)
+        super().mouseDoubleClickEvent(event)
 
     def keyPressEvent(self, event):
         """
@@ -40,7 +40,7 @@ class NodeTextItem(QtWidgets.QGraphicsTextItem):
         elif event.key() == QtCore.Qt.Key.Key_Escape:
             self.setPlainText(self.node.name)
             self.set_editable(False)
-        super(NodeTextItem, self).keyPressEvent(event)
+        super().keyPressEvent(event)
 
     def focusOutEvent(self, event):
         """
@@ -52,7 +52,7 @@ class NodeTextItem(QtWidgets.QGraphicsTextItem):
         current_text = self.toPlainText()
         self.set_node_name(current_text)
         self.set_editable(False)
-        super(NodeTextItem, self).focusOutEvent(event)
+        super().focusOutEvent(event)
 
     def set_editable(self, value=False):
         """

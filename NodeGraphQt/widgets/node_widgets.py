@@ -328,8 +328,15 @@ class NodeLineEdit(NodeBaseWidget):
         :meth:`NodeGraphQt.BaseNode.add_text_input`
     """
 
-    def __init__(self, parent=None, name="", label="", text="", placeholder_text=""):
-        super(NodeLineEdit, self).__init__(parent, name, label)
+    def __init__(
+        self,
+        parent=None,
+        name="",
+        label="",
+        text="",
+        placeholder_text="",
+    ):
+        super().__init__(parent, name, label)
         bg_color = ViewerEnum.BACKGROUND_COLOR.value
         text_color = tuple(map(lambda i, j: i - j, (255, 255, 255), bg_color))
         text_sel_color = text_color
@@ -401,7 +408,7 @@ class NodeCheckBox(NodeBaseWidget):
     """
 
     def __init__(self, parent=None, name="", label="", text="", state=False):
-        super(NodeCheckBox, self).__init__(parent, name, label)
+        super().__init__(parent, name, label)
         _cbox = QtWidgets.QCheckBox(text)
         text_color = tuple(
             map(lambda i, j: i - j, (255, 255, 255), ViewerEnum.BACKGROUND_COLOR.value)

@@ -11,7 +11,7 @@ class SlicerPipeItem(QtWidgets.QGraphicsPathItem):
     """
 
     def __init__(self):
-        super(SlicerPipeItem, self).__init__()
+        super().__init__()
         self.setZValue(Z_VAL_NODE_WIDGET + 2)
 
     def paint(self, painter, option, widget):

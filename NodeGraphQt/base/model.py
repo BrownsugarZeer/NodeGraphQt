@@ -23,6 +23,7 @@ class NodeGraphModel:
         self.pipe_style = PipeLayoutEnum.CURVED.value
         self.layout_direction = LayoutDirectionEnum.HORIZONTAL.value
 
+    @property
     def common_properties(self):
         """
         Return all common node properties.
@@ -42,7 +43,7 @@ class NodeGraphModel:
         """
         return self.__common_node_props
 
-    def set_node_common_properties(self, attrs):
+    def set_node_common_properties(self, attrs: dict):
         """
         Store common node properties.
 
@@ -62,7 +63,7 @@ class NodeGraphModel:
         for node_type in attrs.keys():
             node_props = attrs[node_type]
 
-            if node_type not in self.__common_node_props.keys():
+            if node_type not in self.__common_node_props:
                 self.__common_node_props[node_type] = node_props
                 continue
 

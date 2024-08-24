@@ -11,9 +11,7 @@ from NodeGraphQt.constants import (
     ViewerEnum,
     Z_VAL_PIPE,
 )
-from NodeGraphQt.qgraphics.node_abstract import AbstractNodeItem
-
-# from NodeGraphQt.qgraphics.node_backdrop import BackdropNodeItem
+from NodeGraphQt.nodes.base_abstract import AbstractNodeItem
 from NodeGraphQt.qgraphics.pipe import PipeItem, LivePipeItem
 from NodeGraphQt.qgraphics.port import PortItem
 from NodeGraphQt.qgraphics.slicer import SlicerPipeItem
@@ -42,7 +40,6 @@ class NodeViewer(QtWidgets.QGraphicsView):
     connection_changed = QtCore.Signal(list, list)
     insert_node = QtCore.Signal(object, str, object)
     node_name_changed = QtCore.Signal(str, str)
-    node_backdrop_updated = QtCore.Signal(str, str, object)
 
     # pass through signals that are translated into "NodeGraph()" signals.
     node_selected = QtCore.Signal(str)
@@ -58,7 +55,7 @@ class NodeViewer(QtWidgets.QGraphicsView):
             undo_stack (QtGui.QUndoStack): undo stack from the parent
                                                graph controller.
         """
-        super(NodeViewer, self).__init__(parent)
+        super().__init__(parent)
 
         self.setScene(NodeScene(self))
         self.setRenderHint(QtGui.QPainter.RenderHint.Antialiasing, True)
@@ -180,7 +177,7 @@ class NodeViewer(QtWidgets.QGraphicsView):
         #                 conflict with parent existing host app.
         self._ctx_menu_bar.addMenu(self._ctx_graph_menu)
         self._ctx_menu_bar.addMenu(self._ctx_node_menu)
-        return super(NodeViewer, self).focusInEvent(event)
+        return super().focusInEvent(event)
 
     def focusOutEvent(self, event):
         """
@@ -190,7 +187,7 @@ class NodeViewer(QtWidgets.QGraphicsView):
         # workaround fix: Clear the QMenuBar so the QAction shotcuts don't
         #                 conflict with existing parent host app.
         self._ctx_menu_bar.clear()
-        return super(NodeViewer, self).focusOutEvent(event)
+        return super().focusOutEvent(event)
 
     # --- private ---
 
@@ -356,7 +353,7 @@ class NodeViewer(QtWidgets.QGraphicsView):
         delta = max(w / self._last_size.width(), h / self._last_size.height())
         self._set_viewer_zoom(delta)
         self._last_size = self.size()
-        super(NodeViewer, self).resizeEvent(event)
+        super().resizeEvent(event)
 
     def contextMenuEvent(self, event):
         self.RMB_state = False
@@ -426,15 +423,10 @@ class NodeViewer(QtWidgets.QGraphicsView):
         items = self._items_near(map_pos, None, 20, 20)
         pipes = []
         nodes = []
-        backdrop = None
         for itm in items:
             if isinstance(itm, PipeItem):
                 pipes.append(itm)
             elif isinstance(itm, AbstractNodeItem):
-                # TODO: drop node Not ready yet.
-                # if isinstance(itm, BackdropNodeItem):
-                #     backdrop = itm
-                #     continue
                 nodes.append(itm)
 
         if nodes:
@@ -447,32 +439,16 @@ class NodeViewer(QtWidgets.QGraphicsView):
         if self.LMB_state:
             # toggle extend node selection.
             if self.SHIFT_state:
-                if items and backdrop == items[0]:
-                    backdrop.selected = not backdrop.selected
-                    if backdrop.selected:
-                        selection.add(backdrop)
-                    for n in backdrop.get_nodes():
-                        n.selected = backdrop.selected
-                        if backdrop.selected:
-                            selection.add(n)
-                else:
-                    for node in nodes:
-                        node.selected = not node.selected
-                        if node.selected:
-                            selection.add(node)
+                for node in nodes:
+                    node.selected = not node.selected
+                    if node.selected:
+                        selection.add(node)
             # unselected nodes with the "ctrl" key.
             elif self.CTRL_state:
-                if items and backdrop == items[0]:
-                    backdrop.selected = False
-                else:
-                    for node in nodes:
-                        node.selected = False
+                for node in nodes:
+                    node.selected = False
             # if no modifier keys then add to selection set.
             else:
-                if backdrop:
-                    selection.add(backdrop)
-                    for n in backdrop.get_nodes():
-                        selection.add(n)
                 for node in nodes:
                     if node.selected:
                         selection.add(node)
@@ -512,7 +488,7 @@ class NodeViewer(QtWidgets.QGraphicsView):
             return
 
         if not self._LIVE_PIPE.isVisible():
-            super(NodeViewer, self).mousePressEvent(event)
+            super().mousePressEvent(event)
 
     def mouseReleaseEvent(self, event):
         if event.button() == QtCore.Qt.MouseButton.LeftButton:
@@ -579,7 +555,7 @@ class NodeViewer(QtWidgets.QGraphicsView):
         node_ids = [n.id for n in nodes if n not in self._prev_selection_nodes]
         self.node_selection_changed.emit(node_ids, prev_ids)
 
-        super(NodeViewer, self).mouseReleaseEvent(event)
+        super().mouseReleaseEvent(event)
 
     def mouseMoveEvent(self, event):
         if self.ALT_state and self.SHIFT_state:
@@ -590,7 +566,7 @@ class NodeViewer(QtWidgets.QGraphicsView):
                     self._SLICER_PIPE.draw_path(p1, p2)
                     self._SLICER_PIPE.show()
             self._previous_pos = event.pos()
-            super(NodeViewer, self).mouseMoveEvent(event)
+            super().mouseMoveEvent(event)
             return
 
         if self.MMB_state and self.ALT_state:
@@ -663,7 +639,7 @@ class NodeViewer(QtWidgets.QGraphicsView):
                             break
 
         self._previous_pos = event.pos()
-        super(NodeViewer, self).mouseMoveEvent(event)
+        super().mouseMoveEvent(event)
 
     def wheelEvent(self, event):
         try:
@@ -732,7 +708,7 @@ class NodeViewer(QtWidgets.QGraphicsView):
             self.SHIFT_state = True
 
         if self._LIVE_PIPE.isVisible():
-            super(NodeViewer, self).keyPressEvent(event)
+            super().keyPressEvent(event)
             return
 
         # show cursor text
@@ -751,7 +727,7 @@ class NodeViewer(QtWidgets.QGraphicsView):
             self._cursor_text.setPos(self.mapToScene(self._previous_pos))
             self._cursor_text.setVisible(True)
 
-        super(NodeViewer, self).keyPressEvent(event)
+        super().keyPressEvent(event)
 
     def keyReleaseEvent(self, event):
         """
@@ -768,7 +744,7 @@ class NodeViewer(QtWidgets.QGraphicsView):
             event.modifiers() == QtCore.Qt.KeyboardModifier.ControlModifier
         )
         self.SHIFT_state = event.modifiers() == QtCore.Qt.KeyboardModifier.ShiftModifier
-        super(NodeViewer, self).keyReleaseEvent(event)
+        super().keyReleaseEvent(event)
 
         # hide and reset cursor text.
         self._cursor_text.setPlainText("")
@@ -881,10 +857,6 @@ class NodeViewer(QtWidgets.QGraphicsView):
             # emit selected node id with LMB.
             if event.button() == QtCore.Qt.MouseButton.LeftButton:
                 self.node_selected.emit(node.id)
-
-            # TODO: drop node Not ready yet.
-            # if not isinstance(node, BackdropNodeItem):
-            #     return
 
         if pipe:
             if not self.LMB_state:

@@ -11,7 +11,7 @@ from NodeGraphQt.constants import (
     Z_VAL_NODE,
 )
 from NodeGraphQt.errors import NodeWidgetError
-from NodeGraphQt.qgraphics.node_abstract import AbstractNodeItem
+from NodeGraphQt.nodes.base_abstract import AbstractNodeItem
 from NodeGraphQt.qgraphics.node_text_item import NodeTextItem
 from NodeGraphQt.qgraphics.port import PortItem, CustomPortItem
 
@@ -144,7 +144,7 @@ class NodeItem(AbstractNodeItem):
                 if p.hovered:
                     event.ignore()
                     return
-        super(NodeItem, self).mousePressEvent(event)
+        super().mousePressEvent(event)
 
     def mouseReleaseEvent(self, event):
         """
@@ -156,7 +156,7 @@ class NodeItem(AbstractNodeItem):
         if event.modifiers() == QtCore.Qt.KeyboardModifier.AltModifier:
             event.ignore()
             return
-        super(NodeItem, self).mouseReleaseEvent(event)
+        super().mouseReleaseEvent(event)
 
     def mouseDoubleClickEvent(self, event):
         """
@@ -178,7 +178,7 @@ class NodeItem(AbstractNodeItem):
             viewer = self.viewer()
             if viewer:
                 viewer.node_double_clicked.emit(self.id)
-        super(NodeItem, self).mouseDoubleClickEvent(event)
+        super().mouseDoubleClickEvent(event)
 
     def itemChange(self, change, value):
         """
@@ -199,7 +199,7 @@ class NodeItem(AbstractNodeItem):
             if not self.selected:
                 self.setZValue(Z_VAL_NODE + 1)
 
-        return super(NodeItem, self).itemChange(change, value)
+        return super().itemChange(change, value)
 
     def _tooltip_disable(self, state):
         """
@@ -830,7 +830,7 @@ class NodeItem(AbstractNodeItem):
         return name in self._widgets.keys()
 
     def from_dict(self, node_dict):
-        super(NodeItem, self).from_dict(node_dict)
+        super().from_dict(node_dict)
         custom_prop = node_dict.get("custom") or {}
         for prop_name, value in custom_prop.items():
             prop_widget = self._widgets.get(prop_name)
