@@ -11,7 +11,7 @@ from NodeGraphQt.constants import (
     Z_VAL_PIPE,
     Z_VAL_NODE_WIDGET,
 )
-from NodeGraphQt.qgraphics.port import PortItem
+from NodeGraphQt.ports.base_item import PortItem
 
 PIPE_STYLES = {
     PipeEnum.DRAW_TYPE_DEFAULT.value: QtCore.Qt.PenStyle.SolidLine,

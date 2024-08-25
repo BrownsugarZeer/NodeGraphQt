@@ -306,8 +306,8 @@ class PortConnectedCmd(QtGui.QUndoCommand):
         self.emit_signal = emit_signal
 
     def undo(self):
-        src_model = self.source.model
-        trg_model = self.target.model
+        src_model = self.source
+        trg_model = self.target
         src_id = self.source.node.id
         trg_id = self.target.node.id
 
@@ -334,8 +334,8 @@ class PortConnectedCmd(QtGui.QUndoCommand):
             )
 
     def redo(self):
-        src_model = self.source.model
-        trg_model = self.target.model
+        src_model = self.source
+        trg_model = self.target
         src_id = self.source.node.id
         trg_id = self.target.node.id
 
@@ -370,8 +370,8 @@ class PortDisconnectedCmd(QtGui.QUndoCommand):
         self.emit_signal = emit_signal
 
     def undo(self):
-        src_model = self.source.model
-        trg_model = self.target.model
+        src_model = self.source
+        trg_model = self.target
         src_id = self.source.node.id
         trg_id = self.target.node.id
 
@@ -389,8 +389,8 @@ class PortDisconnectedCmd(QtGui.QUndoCommand):
             )
 
     def redo(self):
-        src_model = self.source.model
-        trg_model = self.target.model
+        src_model = self.source
+        trg_model = self.target
         src_id = self.source.node.id
         trg_id = self.target.node.id
 
@@ -431,11 +431,11 @@ class PortLockedCmd(QtGui.QUndoCommand):
         self.port = port
 
     def undo(self):
-        self.port.model.locked = False
+        self.port.locked = False
         self.port.view.locked = False
 
     def redo(self):
-        self.port.model.locked = True
+        self.port.locked = True
         self.port.view.locked = True
 
 
@@ -453,11 +453,11 @@ class PortUnlockedCmd(QtGui.QUndoCommand):
         self.port = port
 
     def undo(self):
-        self.port.model.locked = True
+        self.port.locked = True
         self.port.view.locked = True
 
     def redo(self):
-        self.port.model.locked = False
+        self.port.locked = False
         self.port.view.locked = False
 
 
@@ -479,7 +479,7 @@ class PortVisibleCmd(QtGui.QUndoCommand):
             self.setText(f"hide port {self.port.name}")
 
     def set_visible(self, visible):
-        self.port.model.visible = visible
+        self.port.visible = visible
         self.port.view.setVisible(visible)
         node_view = self.port.node.view
         text_item = None

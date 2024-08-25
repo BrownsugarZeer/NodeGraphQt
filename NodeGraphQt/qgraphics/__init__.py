@@ -5,7 +5,7 @@ from NodeGraphQt.qgraphics.pipe import (
     LivePipeItem,
     LivePipePolygonItem,
 )
-from NodeGraphQt.qgraphics.port import (
+from NodeGraphQt.ports.base_item import (
     PortItem,
     CustomPortItem,
 )

@@ -21,8 +21,8 @@ from NodeGraphQt.base.menu import (
     NodeGraphCommand,
 )
 from NodeGraphQt.base.model import NodeGraphModel
-from NodeGraphQt.base.port import (
-    PortModel,
+from NodeGraphQt.ports.base_model import (
+    # PortModel,
     Port,
 )
 
@@ -46,6 +46,6 @@ __all__ = [
     "NodesMenu",
     "NodeGraphCommand",
     "NodeGraphModel",
-    "PortModel",
+    # "PortModel",
     "Port",
 ]

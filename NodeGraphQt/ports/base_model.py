@@ -1,6 +1,7 @@
+from uuid import uuid4
 from typing import List, DefaultDict
 from collections import defaultdict
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import BaseModel, ConfigDict, Field, PrivateAttr
 
 from NodeGraphQt.base.commands import (
     PortConnectedCmd,
@@ -15,28 +16,10 @@ from NodeGraphQt.base.commands import (
 from NodeGraphQt.nodes.base_model import NodeObject
 from NodeGraphQt.constants import PortTypeEnum
 from NodeGraphQt.errors import PortError
+from NodeGraphQt.ports.base_item import PortItem
 
 
-class PortModel(BaseModel):
-    """
-    Data dump for a port object.
-    """
-
-    node: NodeObject
-    dtype: str = ""
-    name: str = "port"
-    display_name: bool = True
-    multi_connection: bool = False
-    visible: bool = True
-    locked: bool = False
-    connected_ports: DefaultDict[str, List[str]] = Field(
-        default_factory=lambda: defaultdict(list)
-    )
-
-    model_config = ConfigDict(arbitrary_types_allowed=True)
-
-
-class Port:
+class Port(BaseModel):
     """
     The ``Port`` class is used for connecting one node to another.
 
@@ -54,9 +37,45 @@ class Port:
         port (PortItem): graphic item used for drawing.
     """
 
-    def __init__(self, node, port: "Port"):
-        self.__view = port
-        self.__model = PortModel(node=node)
+    view: "PortItem" = Field(
+        description="Returns the :class:`QtWidgets.QGraphicsItem` used in the scene.",
+    )
+    node: NodeObject = Field(
+        # NOTE: Actually, this is a NodeGraphQt.BaseNode
+        description="Parent node object"
+    )
+    dtype: str = Field(
+        default="",
+        description="The port connection type. (NodeGraphQt.constants.IN_PORT or NodeGraphQt.constants.OUT_PORT)",
+    )
+    name: str = Field(
+        default="port",
+        description="The port name. (NodeGraphQt.constants.IN_PORT or NodeGraphQt.constants.OUT_PORT)",
+    )
+    display_name: bool = Field(
+        default=True, description="display the port name on the node."
+    )
+    multi_connection: bool = Field(
+        default=False, description="Whether the ports is a single connection or not"
+    )
+    visible: bool = Field(
+        default=True, description="Whether the port is visible in the node graph or not"
+    )
+    locked: bool = Field(
+        default=False,
+        description="If ports are locked then new pipe connections can't be connected and current connected pipes can't be disconnected.",
+    )
+    connected_ports: DefaultDict[str, List[str]] = Field(
+        default_factory=lambda: defaultdict(list)
+    )
+    _uuid: str = PrivateAttr(
+        default_factory=lambda: uuid4().hex,
+    )
+
+    model_config = ConfigDict(arbitrary_types_allowed=True)
+
+    def __hash__(self):
+        return hash(self._uuid)
 
     def __repr__(self):
         msg = f"{self.__class__.__name__}('{self.name}')"
@@ -64,58 +83,20 @@ class Port:
         return msg
 
     @property
-    def view(self):
-        """
-        Returns the :class:`QtWidgets.QGraphicsItem` used in the scene.
+    def color(self):
+        return self.view.color
 
-        Returns:
-            NodeGraphQt.qgraphics.port.PortItem: port item.
-        """
-        return self.__view
+    @color.setter
+    def color(self, color=(0, 0, 0, 255)):
+        self.view.color = color
 
     @property
-    def model(self):
-        """
-        Returns the port model.
+    def border_color(self):
+        return self.view.border_color
 
-        Returns:
-            NodeGraphQt.base.model.PortModel: port model.
-        """
-        return self.__model
-
-    @property
-    def node(self):
-        """
-        Return the parent node.
-
-        Returns:
-            NodeGraphQt.BaseNode: parent node object.
-        """
-        return self.model.node
-
-    @property
-    def dtype(self):
-        """
-        Returns the port type.
-
-        Port Types:
-            - :attr:`NodeGraphQt.constants.IN_PORT` for input port
-            - :attr:`NodeGraphQt.constants.OUT_PORT` for output port
-
-        Returns:
-            str: port connection type.
-        """
-        return self.model.dtype
-
-    @property
-    def name(self):
-        """
-        Returns the port name.
-
-        Returns:
-            str: port name.
-        """
-        return self.model.name
+    @border_color.setter
+    def border_color(self, color=(0, 0, 0, 255)):
+        self.view.border_color = color
 
     @property
     def accepted_port_types(self):
@@ -169,40 +150,6 @@ class Port:
         rejected_types = data.get(port_type) or {}
         return rejected_types.get(port_name) or {}
 
-    @property
-    def color(self):
-        return self.__view.color
-
-    @color.setter
-    def color(self, color=(0, 0, 0, 255)):
-        self.__view.color = color
-
-    @property
-    def border_color(self):
-        return self.__view.border_color
-
-    @border_color.setter
-    def border_color(self, color=(0, 0, 0, 255)):
-        self.__view.border_color = color
-
-    def multi_connection(self):
-        """
-        Returns if the ports is a single connection or not.
-
-        Returns:
-            bool: false if port is a single connection port
-        """
-        return self.model.multi_connection
-
-    def visible(self):
-        """
-        Port visible in the node graph.
-
-        Returns:
-            bool: true if visible.
-        """
-        return self.model.visible
-
     def set_visible(self, visible=True, push_undo=True):
         """
         Sets weather the port should be visible or not.
@@ -213,7 +160,7 @@ class Port:
         """
 
         # prevent signals from causing an infinite loop.
-        if visible == self.visible():
+        if visible == self.visible:
             return
 
         undo_cmd = PortVisibleCmd(self, visible)
@@ -222,18 +169,6 @@ class Port:
             undo_stack.push(undo_cmd)
         else:
             undo_cmd.redo()
-
-    def locked(self):
-        """
-        Returns the locked state.
-
-        If ports are locked then new pipe connections can't be connected
-        and current connected pipes can't be disconnected.
-
-        Returns:
-            bool: true if locked.
-        """
-        return self.model.locked
 
     def lock(self):
         """
@@ -267,7 +202,7 @@ class Port:
         """
 
         # prevent signals from causing an infinite loop.
-        if state == self.locked():
+        if state == self.locked:
             return
 
         graph = self.node.graph
@@ -281,10 +216,10 @@ class Port:
         else:
             undo_cmd.redo()
         if connected_ports:
-            for port in self.connected_ports():
+            for port in self.get_connected_ports():
                 port.set_locked(state, connected_ports=False, push_undo=push_undo)
 
-    def connected_ports(self):
+    def get_connected_ports(self):
         """
         Returns all connected ports.
 
@@ -293,7 +228,7 @@ class Port:
         """
         ports = []
         graph = self.node.graph
-        for node_id, port_names in self.model.connected_ports.items():
+        for node_id, port_names in self.connected_ports.items():
             for port_name in port_names:
                 node = graph.get_node_by_id(node_id)
                 if self.dtype == PortTypeEnum.IN.value:
@@ -315,11 +250,11 @@ class Port:
         if not port:
             return
 
-        if self in port.connected_ports():
+        if self in port.get_connected_ports():
             return
 
-        if self.locked() or port.locked():
-            name = [p.name for p in [self, port] if p.locked()][0]
+        if self.locked or port.locked:
+            name = [p.name for p in [self, port] if p.locked][0]
             raise PortError(f"Can't connect port because '{name}' is locked.")
 
         # validate accept connection.
@@ -359,8 +294,8 @@ class Port:
             undo_stack.beginMacro("connect port")
 
         pre_conn_port = None
-        src_conn_ports = self.connected_ports()
-        if not self.multi_connection() and src_conn_ports:
+        src_conn_ports = self.get_connected_ports()
+        if not self.multi_connection and src_conn_ports:
             pre_conn_port = src_conn_ports[0]
 
         if not port:
@@ -387,8 +322,8 @@ class Port:
                     NodeInputDisconnectedCmd(self, pre_conn_port).redo()
                 return
 
-        trg_conn_ports = port.connected_ports()
-        if not port.multi_connection() and trg_conn_ports:
+        trg_conn_ports = port.get_connected_ports()
+        if not port.multi_connection and trg_conn_ports:
             dettached_port = trg_conn_ports[0]
             if push_undo:
                 undo_stack.push(PortDisconnectedCmd(port, dettached_port, emit_signal))
@@ -425,8 +360,8 @@ class Port:
         if not port:
             return
 
-        if self.locked() or port.locked():
-            name = [p.name for p in [self, port] if p.locked()][0]
+        if self.locked or port.locked:
+            name = [p.name for p in [self, port] if p.locked][0]
             raise PortError(f"Can't disconnect port because '{name}' is locked.")
 
         graph = self.node.graph
@@ -453,21 +388,21 @@ class Port:
             push_undo (bool): register the command to the undo stack. (default: True)
             emit_signal (bool): emit the port connection signals. (default: True)
         """
-        if self.locked():
+        if self.locked:
             err = 'Can\'t clear connections because port "{}" is locked.'
             raise PortError(err.format(self.name))
 
-        if not self.connected_ports():
+        if not self.get_connected_ports():
             return
 
         if push_undo:
             graph = self.node.graph
             undo_stack = graph.undo_stack()
             undo_stack.beginMacro('"{}" clear connections')
-            for cp in self.connected_ports():
+            for cp in self.get_connected_ports():
                 self.disconnect_from(cp, emit_signal=emit_signal)
             undo_stack.endMacro()
             return
 
-        for cp in self.connected_ports():
+        for cp in self.get_connected_ports():
             self.disconnect_from(cp, push_undo=False, emit_signal=emit_signal)

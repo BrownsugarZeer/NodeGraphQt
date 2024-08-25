@@ -13,7 +13,7 @@ from NodeGraphQt.constants import (
 )
 from NodeGraphQt.nodes.base_abstract import AbstractNodeItem
 from NodeGraphQt.qgraphics.pipe import PipeItem, LivePipeItem
-from NodeGraphQt.qgraphics.port import PortItem
+from NodeGraphQt.ports.base_item import PortItem
 from NodeGraphQt.qgraphics.slicer import SlicerPipeItem
 from NodeGraphQt.widgets.dialogs import BaseDialog, FileDialog
 from NodeGraphQt.widgets.scene import NodeScene

@@ -13,7 +13,7 @@ from NodeGraphQt.constants import (
 from NodeGraphQt.errors import NodeWidgetError
 from NodeGraphQt.nodes.base_abstract import AbstractNodeItem
 from NodeGraphQt.qgraphics.node_text_item import NodeTextItem
-from NodeGraphQt.qgraphics.port import PortItem, CustomPortItem
+from NodeGraphQt.ports.base_item import PortItem, CustomPortItem
 
 
 class NodeItem(AbstractNodeItem):
