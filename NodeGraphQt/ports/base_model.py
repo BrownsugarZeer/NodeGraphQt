@@ -112,7 +112,7 @@ class Port(BaseModel):
         """
         port_name = self.name
         port_type = self.dtype
-        node_type = self.node.dtype()
+        node_type = self.node.identifier
 
         ports = self.node._inputs + self.node._outputs
         if self not in ports:
@@ -138,7 +138,7 @@ class Port(BaseModel):
         """
         port_name = self.name
         port_type = self.dtype
-        node_type = self.node.dtype()
+        node_type = self.node.identifier
 
         ports = self.node._inputs + self.node._outputs
         if self not in ports:
@@ -258,13 +258,14 @@ class Port(BaseModel):
             raise PortError(f"Can't connect port because '{name}' is locked.")
 
         # validate accept connection.
-        node_type = self.node.dtype()
+        node_type = self.node.identifier
         accepted_types = port.accepted_port_types.get(node_type)
         if accepted_types:
             accepted_pnames = accepted_types.get(self.dtype) or set([])
             if self.name not in accepted_pnames:
                 return
-        node_type = port.node.dtype
+
+        node_type = port.node.identifier
         accepted_types = self.accepted_port_types.get(node_type)
         if accepted_types:
             accepted_pnames = accepted_types.get(port.dtype) or set([])
@@ -272,13 +273,13 @@ class Port(BaseModel):
                 return
 
         # validate reject connection.
-        node_type = self.node.dtype()
+        node_type = self.node.identifier
         rejected_types = port.rejected_port_types.get(node_type)
         if rejected_types:
             rejected_pnames = rejected_types.get(self.dtype) or set([])
             if self.name in rejected_pnames:
                 return
-        node_type = port.node.dtype
+        node_type = port.node.identifier
         rejected_types = self.rejected_port_types.get(node_type)
         if rejected_types:
             rejected_pnames = rejected_types.get(port.dtype) or set([])

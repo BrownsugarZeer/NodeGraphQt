@@ -208,12 +208,8 @@ class PipeLayoutEnum(Enum):
     :py:mod:`NodeGraphQt.constants.PipeLayoutEnum`
     """
 
-    #: draw straight lines for pipe connections.
-    STRAIGHT = 0
     #: draw curved lines for pipe connections.
     CURVED = 1
-    #: draw angled lines for pipe connections.
-    ANGLE = 2
 
 
 # === PROPERTY BIN WIDGET ===

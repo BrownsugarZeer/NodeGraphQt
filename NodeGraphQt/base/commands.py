@@ -15,7 +15,6 @@ class PropertyChangedCmd(QtGui.QUndoCommand):
 
     def __init__(self, node, name, value):
         super().__init__()
-        # TODO: node.name() -> node.view.name
         self.setText(f"property '{node.view.name}:{name}'")
         self.node = node
         self.name = name
@@ -178,7 +177,6 @@ class NodeAddedCmd(QtGui.QUndoCommand):
 
     def undo(self):
         node_id = self.node.id
-        # TODO: n.x_pos(), n.y_pos() -> n.view.xy_pos
         self.pos = self.pos or self.node.view.xy_pos
         self.graph.model.nodes.pop(self.node.id)
         self.node.view.delete()

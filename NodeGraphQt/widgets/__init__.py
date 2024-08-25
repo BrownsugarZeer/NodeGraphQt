@@ -10,9 +10,7 @@ from NodeGraphQt.widgets.dialogs import (
 from NodeGraphQt.widgets.node_graph import NodeGraphWidget
 from NodeGraphQt.widgets.node_widgets import (
     NodeBaseWidget,
-    NodeComboBox,
     NodeLineEdit,
-    NodeCheckBox,
 )
 from NodeGraphQt.widgets.scene import NodeScene
 from NodeGraphQt.widgets.tab_search import (
@@ -30,9 +28,7 @@ __all__ = [
     "BaseDialog",
     "NodeGraphWidget",
     "NodeBaseWidget",
-    "NodeComboBox",
     "NodeLineEdit",
-    "NodeCheckBox",
     "NodeScene",
     "TabSearchCompleter",
     "TabSearchLineEditWidget",

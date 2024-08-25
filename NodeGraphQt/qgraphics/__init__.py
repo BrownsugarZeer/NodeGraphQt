@@ -5,10 +5,7 @@ from NodeGraphQt.qgraphics.pipe import (
     LivePipeItem,
     LivePipePolygonItem,
 )
-from NodeGraphQt.ports.base_item import (
-    PortItem,
-    CustomPortItem,
-)
+from NodeGraphQt.ports.base_item import PortItem
 from NodeGraphQt.qgraphics.slicer import SlicerPipeItem
 
 __all__ = [
@@ -18,6 +15,5 @@ __all__ = [
     "LivePipeItem",
     "LivePipePolygonItem",
     "PortItem",
-    "CustomPortItem",
     "SlicerPipeItem",
 ]

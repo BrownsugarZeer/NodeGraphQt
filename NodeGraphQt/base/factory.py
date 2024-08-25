@@ -1,16 +1,12 @@
-from typing import Optional
-
-from NodeGraphQt.errors import NodeRegistrationError
 from NodeGraphQt.nodes.base_model import NodeObject
 
 
-class NodeFactory(object):
+class NodeFactory:
     """
     Node factory that stores all the node types.
     """
 
     def __init__(self):
-        self.__aliases = {}
         self.__names = {}
         self.__nodes = {}
 
@@ -23,16 +19,6 @@ class NodeFactory(object):
             dict: key=<node name, value=node_type
         """
         return self.__names
-
-    @property
-    def aliases(self):
-        """
-        Return aliases assigned to the node types.
-
-        Returns:
-            dict: key=alias, value=node type
-        """
-        return self.__aliases
 
     @property
     def nodes(self):
@@ -54,9 +40,6 @@ class NodeFactory(object):
         Returns:
             NodeGraphQt.NodeObject: new node object.
         """
-        if node_type in self.aliases:
-            node_type = self.aliases[node_type]
-
         _NodeClass = self.__nodes.get(node_type)
         if _NodeClass:
             return _NodeClass()
@@ -64,7 +47,8 @@ class NodeFactory(object):
     def register_node(
         self,
         node: NodeObject,
-        alias: Optional[str] = None,
+        name: str,
+        node_type: str,
     ):
         """
         register the node.
@@ -73,17 +57,13 @@ class NodeFactory(object):
             node (NodeGraphQt.NodeObject): node object.
             alias (str): custom alias for the node identifier (optional).
         """
-        if node is None:
-            return
-
-        name = node.NODE_NAME
-        node_type = node.dtype()
-
         if self.__nodes.get(node_type):
-            raise NodeRegistrationError(
+            print(
                 f"node type `{node_type}` already registered to `{self.__nodes[node_type]}`! "
                 "Please specify a new plugin class name or __identifier__."
             )
+            return
+
         self.__nodes[node_type] = node
 
         if self.__names.get(name):
@@ -91,17 +71,9 @@ class NodeFactory(object):
         else:
             self.__names[name] = [node_type]
 
-        if alias:
-            if self.__aliases.get(alias):
-                raise NodeRegistrationError(
-                    f"Alias: `{alias}` already registered to `{self.__aliases.get(alias)}`"
-                )
-            self.__aliases[alias] = node_type
-
     def clear_registered_nodes(self):
         """
         clear out registered nodes, to prevent conflicts on reset.
         """
         self.__nodes.clear()
         self.__names.clear()
-        self.__aliases.clear()

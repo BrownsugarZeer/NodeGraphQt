@@ -5,7 +5,6 @@ from PySide6 import QtCore, QtGui, QtWidgets
 from NodeGraphQt.constants import (
     LayoutDirectionEnum,
     PipeEnum,
-    PipeLayoutEnum,
     PortTypeEnum,
     ITEM_CACHE_MODE,
     Z_VAL_PIPE,
@@ -212,39 +211,22 @@ class PipeItem(QtWidgets.QGraphicsPathItem):
             pos2 (QPointF): end port position.
             path (QPainterPath): path to draw.
         """
-        if self.viewer_pipe_layout() == PipeLayoutEnum.CURVED.value:
-            ctr_offset_y1, ctr_offset_y2 = pos1.y(), pos2.y()
-            tangent = abs(ctr_offset_y1 - ctr_offset_y2)
+        ctr_offset_y1, ctr_offset_y2 = pos1.y(), pos2.y()
+        tangent = abs(ctr_offset_y1 - ctr_offset_y2)
 
-            max_height = start_port.node.boundingRect().height()
-            tangent = min(tangent, max_height)
-            if start_port.port_type == PortTypeEnum.IN.value:
-                ctr_offset_y1 -= tangent
-                ctr_offset_y2 += tangent
-            else:
-                ctr_offset_y1 += tangent
-                ctr_offset_y2 -= tangent
+        max_height = start_port.node.boundingRect().height()
+        tangent = min(tangent, max_height)
+        if start_port.port_type == PortTypeEnum.IN.value:
+            ctr_offset_y1 -= tangent
+            ctr_offset_y2 += tangent
+        else:
+            ctr_offset_y1 += tangent
+            ctr_offset_y2 -= tangent
 
-            ctr_point1 = QtCore.QPointF(pos1.x(), ctr_offset_y1)
-            ctr_point2 = QtCore.QPointF(pos2.x(), ctr_offset_y2)
-            path.cubicTo(ctr_point1, ctr_point2, pos2)
-            self.setPath(path)
-        elif self.viewer_pipe_layout() == PipeLayoutEnum.ANGLE.value:
-            ctr_offset_y1, ctr_offset_y2 = pos1.y(), pos2.y()
-            distance = abs(ctr_offset_y1 - ctr_offset_y2) / 2
-            if start_port.port_type == PortTypeEnum.IN.value:
-                ctr_offset_y1 -= distance
-                ctr_offset_y2 += distance
-            else:
-                ctr_offset_y1 += distance
-                ctr_offset_y2 -= distance
-
-            ctr_point1 = QtCore.QPointF(pos1.x(), ctr_offset_y1)
-            ctr_point2 = QtCore.QPointF(pos2.x(), ctr_offset_y2)
-            path.lineTo(ctr_point1)
-            path.lineTo(ctr_point2)
-            path.lineTo(pos2)
-            self.setPath(path)
+        ctr_point1 = QtCore.QPointF(pos1.x(), ctr_offset_y1)
+        ctr_point2 = QtCore.QPointF(pos2.x(), ctr_offset_y2)
+        path.cubicTo(ctr_point1, ctr_point2, pos2)
+        self.setPath(path)
 
     def _draw_path_horizontal(self, start_port, pos1, pos2, path):
         """
@@ -256,39 +238,22 @@ class PipeItem(QtWidgets.QGraphicsPathItem):
             pos2 (QPointF): end port position.
             path (QPainterPath): path to draw.
         """
-        if self.viewer_pipe_layout() == PipeLayoutEnum.CURVED.value:
-            ctr_offset_x1, ctr_offset_x2 = pos1.x(), pos2.x()
-            tangent = abs(ctr_offset_x1 - ctr_offset_x2)
+        ctr_offset_x1, ctr_offset_x2 = pos1.x(), pos2.x()
+        tangent = abs(ctr_offset_x1 - ctr_offset_x2)
 
-            max_width = start_port.node.boundingRect().width()
-            tangent = min(tangent, max_width)
-            if start_port.port_type == PortTypeEnum.IN.value:
-                ctr_offset_x1 -= tangent
-                ctr_offset_x2 += tangent
-            else:
-                ctr_offset_x1 += tangent
-                ctr_offset_x2 -= tangent
+        max_width = start_port.node.boundingRect().width()
+        tangent = min(tangent, max_width)
+        if start_port.port_type == PortTypeEnum.IN.value:
+            ctr_offset_x1 -= tangent
+            ctr_offset_x2 += tangent
+        else:
+            ctr_offset_x1 += tangent
+            ctr_offset_x2 -= tangent
 
-            ctr_point1 = QtCore.QPointF(ctr_offset_x1, pos1.y())
-            ctr_point2 = QtCore.QPointF(ctr_offset_x2, pos2.y())
-            path.cubicTo(ctr_point1, ctr_point2, pos2)
-            self.setPath(path)
-        elif self.viewer_pipe_layout() == PipeLayoutEnum.ANGLE.value:
-            ctr_offset_x1, ctr_offset_x2 = pos1.x(), pos2.x()
-            distance = abs(ctr_offset_x1 - ctr_offset_x2) / 2
-            if start_port.port_type == PortTypeEnum.IN.value:
-                ctr_offset_x1 -= distance
-                ctr_offset_x2 += distance
-            else:
-                ctr_offset_x1 += distance
-                ctr_offset_x2 -= distance
-
-            ctr_point1 = QtCore.QPointF(ctr_offset_x1, pos1.y())
-            ctr_point2 = QtCore.QPointF(ctr_offset_x2, pos2.y())
-            path.lineTo(ctr_point1)
-            path.lineTo(ctr_point2)
-            path.lineTo(pos2)
-            self.setPath(path)
+        ctr_point1 = QtCore.QPointF(ctr_offset_x1, pos1.y())
+        ctr_point2 = QtCore.QPointF(ctr_offset_x2, pos2.y())
+        path.cubicTo(ctr_point1, ctr_point2, pos2)
+        self.setPath(path)
 
     def draw_path(self, start_port, end_port=None, cursor_pos=None):
         """
@@ -350,12 +315,6 @@ class PipeItem(QtWidgets.QGraphicsPathItem):
 
         path.moveTo(line.x1(), line.y1())
 
-        if self.viewer_pipe_layout() == PipeLayoutEnum.STRAIGHT.value:
-            path.lineTo(pos2)
-            self.setPath(path)
-            self._draw_direction_pointer()
-            return
-
         if direction is LayoutDirectionEnum.VERTICAL.value:
             self._draw_path_vertical(start_port, pos1, pos2, path)
         elif direction is LayoutDirectionEnum.HORIZONTAL.value:
@@ -397,15 +356,6 @@ class PipeItem(QtWidgets.QGraphicsPathItem):
         """
         if self.scene():
             return self.scene().viewer()
-
-    def viewer_pipe_layout(self):
-        """
-        Returns:
-            int: pipe layout mode.
-        """
-        viewer = self.viewer()
-        if viewer:
-            return viewer.get_pipe_layout()
 
     def viewer_layout_direction(self):
         """

@@ -16,7 +16,6 @@ class NodeModel(BaseModel):
     Data dump for a node object.
     """
 
-    # TODO: rename all dtype to `identifier`
     dtype: str
     name: str
     id: str = Field(default_factory=lambda: uuid4().hex)
@@ -159,36 +158,6 @@ class NodeModel(BaseModel):
         """
         return name in self._custom_prop
 
-    def get_widget_type(self, name):
-        """
-        Args:
-            name (str): property name.
-
-        Returns:
-            int: node property widget type.
-        """
-        model = self._graph_model
-
-        if model is None:
-            return self._property_widget_types.get(name)
-        return model.get_node_common_properties(self.dtype)[name]["widget_type"]
-
-    def get_tab_name(self, name):
-        """
-        Args:
-            name (str): property name.
-
-        Returns:
-            str: name of the tab for the properties bin.
-        """
-        model = self._graph_model
-        if model is None:
-            attrs = self._property_attrs.get(name)
-            if attrs:
-                return attrs[name].get("tab")
-            return
-        return model.get_node_common_properties(self.dtype)[name]["tab"]
-
     @property
     def properties(self):
         """
@@ -201,22 +170,22 @@ class NodeModel(BaseModel):
 
         # NOTE: port_dict: Dict[str, PortModel]
         def _get_connected_ports(port_dict):
-            return {name: model.connected_ports for name, model in port_dict.items()}
+            return {name: port.connected_ports for name, port in port_dict.items()}
 
         # NOTE: port_dict: Dict[str, PortModel]
         def _get_ports(port_dict):
             return [
                 {
                     "name": name,
-                    "multi_connection": model.multi_connection,
-                    "display_name": model.display_name,
+                    "multi_connection": port.multi_connection,
+                    "display_name": port.display_name,
                 }
-                for name, model in port_dict.items()
+                for name, port in port_dict.items()
                 if self.port_deletion_allowed
             ]
 
         node_dict["inputs"] = _get_connected_ports(self.inputs)
-        node_dict["outputs"] = _get_connected_ports(self.inputs)
+        node_dict["outputs"] = _get_connected_ports(self.outputs)
         node_dict["input_ports"] = _get_ports(self.inputs)
         node_dict["output_ports"] = _get_ports(self.outputs)
         node_dict["custom"] = self._custom_prop
@@ -246,59 +215,20 @@ class NodeObject:
     """
 
     __identifier__ = "nodeGraphQt.nodes"
-    """
-    Unique node identifier domain. eg. ``"io.github.jchanvfx"``
-
-    .. important:: re-implement this attribute to provide a unique node type.
-    
-        .. code-block:: python
-            :linenos:
-    
-            from NodeGraphQt import NodeObject
-    
-            class ExampleNode(NodeObject):
-    
-                # unique node identifier domain.
-                __identifier__ = 'io.github.jchanvfx'
-    
-                def __init__(self):
-                    ...
-    
-    :return: node type domain.
-    :rtype: str
-    
-    :meta hide-value:
-    """
-
     NODE_NAME = None
-    """
-    Initial base node name.
 
-    .. important:: re-implement this attribute to provide a base node name.
-    
-        .. code-block:: python
-            :linenos:
-    
-            from NodeGraphQt import NodeObject
-    
-            class ExampleNode(NodeObject):
-    
-                # initial default node name.
-                NODE_NAME = 'Example Node'
-    
-                def __init__(self):
-                    ...
-    
-    :return: node name
-    :rtype: str
-    
-    :meta hide-value:
-    """
+    _uuid = uuid4().hex
 
-    def __init__(self, qgraphics_views=None):
+    def __init__(
+        self,
+        qgraphics_views=None,
+    ):
         self._graph = None
 
-        self._model = NodeModel(dtype=self.dtype(), name=self.NODE_NAME)
+        self._model = NodeModel(
+            dtype=f"{self.__identifier__}.{self.__class__.__name__}",
+            name=self.NODE_NAME,
+        )
 
         self._view = qgraphics_views or NodeItem()
         self._view.dtype = self.model.dtype
@@ -311,8 +241,8 @@ class NodeObject:
         msg = f"<{msg} object at {hex(id(self))}>"
         return msg
 
-    @classmethod
-    def dtype(cls):
+    @property
+    def identifier(self):
         """
         Node type identifier followed by the class name.
         `eg.` ``"nodeGraphQt.nodes.NodeObject"``
@@ -320,12 +250,7 @@ class NodeObject:
         Returns:
             str: node type (``__identifier__.__className__``)
         """
-        # TODO: why use @classmethod for NodeObject dtype
-        # NodeGraphQt.errors.NodeRegistrationError: node type
-        # `<property object at 0x000001CA6D70B7E0>` already registered
-        # to `<class 'NodeGraphQt.nodes.backdrop_node.BackdropNode'>`!
-        # Please specify a new plugin class name or __identifier__.
-        return cls.__identifier__ + "." + cls.__name__
+        return self.model.dtype
 
     @property
     def id(self):

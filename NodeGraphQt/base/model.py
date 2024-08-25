@@ -105,7 +105,7 @@ class NodeGraphModel:
         """
         port_name = port.name
         port_type = port.dtype
-        node_type = node.dtype()
+        node_type = node.identifier
 
         node_ports = node._inputs + node._outputs
         if port not in node_ports:
@@ -141,7 +141,7 @@ class NodeGraphModel:
         """
         port_name = port.name
         port_type = port.dtype
-        node_type = node.dtype()
+        node_type = node.identifier
 
         node_ports = node._inputs + node._outputs
         if port not in node_ports:

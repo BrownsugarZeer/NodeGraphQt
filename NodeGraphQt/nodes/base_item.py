@@ -13,7 +13,7 @@ from NodeGraphQt.constants import (
 from NodeGraphQt.errors import NodeWidgetError
 from NodeGraphQt.nodes.base_abstract import AbstractNodeItem
 from NodeGraphQt.qgraphics.node_text_item import NodeTextItem
-from NodeGraphQt.ports.base_item import PortItem, CustomPortItem
+from NodeGraphQt.ports.base_item import PortItem
 
 
 class NodeItem(AbstractNodeItem):
@@ -120,7 +120,6 @@ class NodeItem(AbstractNodeItem):
                 used to describe the parameters needed to draw.
             widget (QtWidgets.QWidget): not used.
         """
-        # self.auto_switch_mode()  # TODO: Deprecated for simplefy
         if self.layout_direction is LayoutDirectionEnum.HORIZONTAL.value:
             self._paint_horizontal(painter, option, widget)
         elif self.layout_direction is LayoutDirectionEnum.VERTICAL.value:
@@ -208,10 +207,10 @@ class NodeItem(AbstractNodeItem):
         Args:
             state (bool): node disable state.
         """
-        tooltip = "<b>{}</b>".format(self.name)
+        tooltip = f"<b>{self.name}</b>"
         if state:
             tooltip += ' <font color="red"><b>(DISABLED)</b></font>'
-        tooltip += "<br/>{}<br/>".format(self.dtype)
+        tooltip += f"<br/>{self.dtype}<br/>"
         self.setToolTip(tooltip)
 
     def _set_base_size(self, add_w=0.0, add_h=0.0):
@@ -700,7 +699,6 @@ class NodeItem(AbstractNodeItem):
         multi_port=False,
         display_name=True,
         locked=False,
-        painter_func=None,
     ):
         """
         Adds a port qgraphics item into the node with the "port_type" set as
@@ -711,15 +709,11 @@ class NodeItem(AbstractNodeItem):
             multi_port (bool): allow multiple connections.
             display_name (bool): display the port name.
             locked (bool): locked state.
-            painter_func (function): custom paint function.
 
         Returns:
             PortItem: input port qgraphics item.
         """
-        if painter_func:
-            port = CustomPortItem(self, painter_func)
-        else:
-            port = PortItem(self)
+        port = PortItem(self)
         port.name = name
         port.port_type = PortTypeEnum.IN.value
         port.multi_connection = multi_port
@@ -733,7 +727,6 @@ class NodeItem(AbstractNodeItem):
         multi_port=False,
         display_name=True,
         locked=False,
-        painter_func=None,
     ):
         """
         Adds a port qgraphics item into the node with the "port_type" set as
@@ -744,15 +737,11 @@ class NodeItem(AbstractNodeItem):
             multi_port (bool): allow multiple connections.
             display_name (bool): display the port name.
             locked (bool): locked state.
-            painter_func (function): custom paint function.
 
         Returns:
             PortItem: output port qgraphics item.
         """
-        if painter_func:
-            port = CustomPortItem(self, painter_func)
-        else:
-            port = PortItem(self)
+        port = PortItem(self)
         port.name = name
         port.port_type = PortTypeEnum.OUT.value
         port.multi_connection = multi_port

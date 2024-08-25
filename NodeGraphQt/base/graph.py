@@ -22,7 +22,6 @@ from NodeGraphQt.constants import (
     URI_SCHEME,
     URN_SCHEME,
     LayoutDirectionEnum,
-    PipeLayoutEnum,
     PortTypeEnum,
     ViewerEnum,
 )
@@ -51,7 +50,6 @@ class NodeGraph(QtCore.QObject):
     :parameters: list[:class:`NodeGraphQt.NodeObject`]
     :emits: registered nodes
     """
-
     node_created = QtCore.Signal(NodeObject)
     """
     Signal triggered when a node is created in the node graph.
@@ -141,13 +139,13 @@ class NodeGraph(QtCore.QObject):
         """
         super().__init__(parent)
         self.setObjectName("NodeGraph")
-        self._model = kwargs.get("model") or NodeGraphModel()
-        self._node_factory = kwargs.get("node_factory") or NodeFactory()
+        self._model = NodeGraphModel()
+        self._node_factory = NodeFactory()
         self._undo_view = None
-        self._undo_stack = kwargs.get("undo_stack") or QtGui.QUndoStack(self)
+        self._undo_stack = QtGui.QUndoStack(self)
         self._widget = None
         self._sub_graphs = {}
-        self._viewer = kwargs.get("viewer") or NodeViewer(undo_stack=self._undo_stack)
+        self._viewer = NodeViewer(undo_stack=self._undo_stack)
 
         layout_direction = kwargs.get("layout_direction")
         if layout_direction:
@@ -158,15 +156,6 @@ class NodeGraph(QtCore.QObject):
             layout_direction = self._model.layout_direction
         self._viewer.set_layout_direction(layout_direction)
 
-        pipe_style = kwargs.get("pipe_style")
-        if pipe_style is not None:
-            if pipe_style not in [e.value for e in PipeLayoutEnum]:
-                pipe_style = PipeLayoutEnum.CURVED.value
-            self._model.pipe_style = pipe_style
-        else:
-            pipe_style = self._model.pipe_style
-        self._viewer.set_pipe_layout(pipe_style)
-
         # viewer needs a reference to the model port connection constrains
         # for the user interaction with the live pipe.
         self._viewer.accept_connection_types = self._model.accept_connection_types
@@ -175,8 +164,6 @@ class NodeGraph(QtCore.QObject):
         self._context_menu = {}
 
         self._register_context_menu()
-        # TODO: drop node Not ready yet.
-        # self._register_builtin_nodes()
         self._wire_signals()
 
     def __repr__(self):
@@ -962,6 +949,7 @@ class NodeGraph(QtCore.QObject):
         self._model.pipe_slicing = mode
         self._viewer.pipe_slicing = self._model.pipe_slicing
 
+    @property
     def pipe_style(self):
         """
         Returns the current pipe layout style.
@@ -973,36 +961,6 @@ class NodeGraph(QtCore.QObject):
             int: pipe style value. :attr:`NodeGraphQt.constants.PipeLayoutEnum`
         """
         return self._model.pipe_style
-
-    def set_pipe_style(self, style=PipeLayoutEnum.CURVED.value):
-        """
-        Set node graph pipes to be drawn as curved `(default)`, straight or angled.
-
-        .. code-block:: python
-            :linenos:
-
-            graph = NodeGraph()
-            graph.set_pipe_style(PipeLayoutEnum.CURVED.value)
-
-        See: :attr:`NodeGraphQt.constants.PipeLayoutEnum`
-
-        .. image:: ../_images/pipe_layout_types.gif
-            :width: 80%
-
-
-        Args:
-            style (int): pipe layout style.
-        """
-        pipe_max = max(
-            [
-                PipeLayoutEnum.CURVED.value,
-                PipeLayoutEnum.STRAIGHT.value,
-                PipeLayoutEnum.ANGLE.value,
-            ]
-        )
-        style = style if 0 <= style <= pipe_max else PipeLayoutEnum.CURVED.value
-        self._model.pipe_style = style
-        self._viewer.set_pipe_layout(style)
 
     def layout_direction(self):
         """
@@ -1115,39 +1073,14 @@ class NodeGraph(QtCore.QObject):
         """
         return sorted(self._node_factory.nodes.keys())
 
-    def register_node(self, node, alias=None):
-        """
-        Register the node to the :meth:`NodeGraph.node_factory`
-
-        Args:
-            node (NodeGraphQt.NodeObject): node object.
-            alias (str): custom alias name for the node type.
-        """
-        self._node_factory.register_node(node, alias)
-        self._viewer.rebuild_tab_search()
-        self.nodes_registered.emit([node])
-
-    def register_nodes(self, nodes):
-        """
-        Register the nodes to the :meth:`NodeGraph.node_factory`
-
-        Args:
-            nodes (list): list of nodes.
-        """
-        for n in nodes:
-            self._node_factory.register_node(n)
-        self._viewer.rebuild_tab_search()
-        self.nodes_registered.emit(nodes)
-
     def create_node(
         self,
-        node_type,
         name=None,
         selected=True,
-        color=None,
         text_color=None,
         pos=None,
         push_undo=True,
+        temp_node_object=None,
     ):
         """
         Create a new node in the node graph.
@@ -1159,7 +1092,6 @@ class NodeGraph(QtCore.QObject):
             node_type (str): node instance type.
             name (str): set name of the node.
             selected (bool): set created node to be selected.
-            color (tuple or str): node color ``(255, 255, 255)`` or ``"#FFFFFF"``.
             text_color (tuple or str): text color ``(255, 255, 255)`` or ``"#FFFFFF"``.
             pos (list[int, int]): initial x, y position for the node (default: ``(0, 0)``).
             push_undo (bool): register the command to the undo stack. (default: True)
@@ -1167,60 +1099,63 @@ class NodeGraph(QtCore.QObject):
         Returns:
             BaseNode: the created instance of the node.
         """
-        node: NodeObject = self._node_factory.create_node_instance(node_type)
 
-        if node:
-            node._graph = self
-            node.model._graph_model = self.model
+        node: BaseNode = temp_node_object()
 
-            wid_types = node.model._property_widget_types
-            prop_attrs = node.model._property_attrs
-            node_type = node.dtype()
+        node._graph = self
+        node.model._graph_model = self.model
 
-            if self.model.get_node_common_properties(node_type) is None:
-                node_attrs = {
-                    node_type: {n: {"widget_type": wt} for n, wt in wid_types.items()}
-                }
-                for pname, pattrs in prop_attrs.items():
-                    node_attrs[node_type][pname].update(pattrs)
-                self.model.set_node_common_properties(node_attrs)
+        wid_types = node.model._property_widget_types
+        prop_attrs = node.model._property_attrs
+        node_type = node.identifier
 
-            node.NODE_NAME = self.get_unique_name(name or node.NODE_NAME)
-            node.model.name = node.NODE_NAME
-            node.model.selected = selected
+        # Register the node if it's not already registered.
+        self._node_factory.register_node(temp_node_object, name, node_type)
+        self._viewer.rebuild_tab_search()
+        self.nodes_registered.emit([temp_node_object])
 
-            def format_color(clr):
-                if isinstance(clr, str):
-                    clr = clr.strip("#")
-                    return tuple(int(clr[i : i + 2], 16) for i in (0, 2, 4))
-                return clr
+        if self.model.get_node_common_properties(node_type) is None:
+            node_attrs = {
+                node_type: {n: {"widget_type": wt} for n, wt in wid_types.items()}
+            }
+            for pname, pattrs in prop_attrs.items():
+                node_attrs[node_type][pname].update(pattrs)
+            self.model.set_node_common_properties(node_attrs)
 
-            if color:
-                node.model.color = format_color(color)
-            if text_color:
-                node.model.text_color = format_color(text_color)
-            if pos:
-                node.model.pos = [float(pos[0]), float(pos[1])]
+        node.NODE_NAME = self.get_unique_name(name or node.NODE_NAME)
+        node.model.name = node.NODE_NAME
+        node.model.selected = selected
 
-            # initial node direction layout.
-            node.model.layout_direction = self.layout_direction()
+        def format_color(clr):
+            if isinstance(clr, str):
+                clr = clr.strip("#")
+                return tuple(int(clr[i : i + 2], 16) for i in (0, 2, 4))
+            return clr
 
-            node.update()
+        if text_color:
+            node.model.text_color = format_color(text_color)
+        if pos:
+            node.model.pos = [float(pos[0]), float(pos[1])]
 
-            undo_cmd = NodeAddedCmd(self, node, pos=node.model.pos, emit_signal=True)
-            if push_undo:
-                undo_label = f"create node: '{node.NODE_NAME}'"
-                self._undo_stack.beginMacro(undo_label)
-                for n in self.selected_nodes():
-                    n.set_property("selected", False, push_undo=True)
-                self._undo_stack.push(undo_cmd)
-                self._undo_stack.endMacro()
-            else:
-                for n in self.selected_nodes():
-                    n.set_property("selected", False, push_undo=False)
-                undo_cmd.redo()
+        # initial node direction layout.
+        node.model.layout_direction = self.layout_direction()
 
-            return node
+        node.update()
+
+        undo_cmd = NodeAddedCmd(self, node, pos=node.model.pos, emit_signal=True)
+        if push_undo:
+            undo_label = f"create node: '{node.NODE_NAME}'"
+            self._undo_stack.beginMacro(undo_label)
+            for n in self.selected_nodes():
+                n.set_property("selected", False, push_undo=True)
+            self._undo_stack.push(undo_cmd)
+            self._undo_stack.endMacro()
+        else:
+            for n in self.selected_nodes():
+                n.set_property("selected", False, push_undo=False)
+            undo_cmd.redo()
+
+        return node
 
     def add_node(self, node, pos=None, selected=True, push_undo=True):
         """
@@ -1238,7 +1173,7 @@ class NodeGraph(QtCore.QObject):
 
         wid_types = node.model._property_widget_types
         prop_attrs = node.model._property_attrs
-        node_type = node.dtype()
+        node_type = node.identifier
 
         if self.model.get_node_common_properties(node_type) is None:
             node_attrs = {
@@ -1413,7 +1348,7 @@ class NodeGraph(QtCore.QObject):
         for node in base_nodes:
             for port in node.input_ports() + node.output_ports():
                 for connected_port in port.get_connected_ports():
-                    if connected_port.node() in base_nodes:
+                    if connected_port.node in base_nodes:
                         continue
                     port.disconnect_from(connected_port, push_undo=push_undo)
 
@@ -1592,7 +1527,7 @@ class NodeGraph(QtCore.QObject):
         serial_data["graph"]["acyclic"] = self.acyclic()
         serial_data["graph"]["pipe_collision"] = self.pipe_collision()
         serial_data["graph"]["pipe_slicing"] = self.pipe_slicing()
-        serial_data["graph"]["pipe_style"] = self.pipe_style()
+        serial_data["graph"]["pipe_style"] = self.pipe_style
 
         # connection constrains.
         serial_data["graph"][
@@ -1663,8 +1598,6 @@ class NodeGraph(QtCore.QObject):
                 self.set_pipe_collision(attr_value)
             elif attr_name == "pipe_slicing":
                 self.set_pipe_slicing(attr_value)
-            elif attr_name == "pipe_style":
-                self.set_pipe_style(attr_value)
 
             # connection constrains.
             elif attr_name == "accept_connection_types":

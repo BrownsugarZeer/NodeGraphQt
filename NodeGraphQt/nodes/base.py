@@ -1,4 +1,5 @@
 from collections import OrderedDict
+from typing import List
 
 from NodeGraphQt.base.commands import (
     NodeVisibleCmd,
@@ -18,8 +19,6 @@ from NodeGraphQt.errors import (
 )
 from NodeGraphQt.widgets.node_widgets import (
     NodeBaseWidget,
-    NodeCheckBox,
-    NodeComboBox,
     NodeLineEdit,
 )
 
@@ -63,8 +62,8 @@ class BaseNode(NodeObject):
 
     def __init__(self):
         super().__init__()
-        self._inputs = []
-        self._outputs = []
+        self._inputs = []  # NOTE: List[Port]
+        self._outputs = []  # NOTE: List[Port]
 
     def update_model(self):
         """
@@ -119,7 +118,6 @@ class BaseNode(NodeObject):
 
             undo_cmd = PropertyChangedCmd(self, name, value)
             if name == "name":
-                # TODO: self.name() -> self.view.name
                 undo_cmd.setText(f"renamed '{self.view.name}' to '{value}'")
             if push_undo:
                 undo_stack = self.graph.undo_stack()
@@ -150,7 +148,6 @@ class BaseNode(NodeObject):
             value (int): layout direction mode.
         """
         # base logic to update the model and view attributes only.
-        # TODO: set_layout_direction() -> view.layout_direction
         self.view.layout_direction = value
         # redraw the node.
         self._view.draw_node()
@@ -217,38 +214,6 @@ class BaseNode(NodeObject):
         #: redraw node to address calls outside the "__init__" func.
         self.view.draw_node()
 
-    def add_combo_menu(self, name, label="", items=None, tooltip=None, tab=None):
-        """
-        Creates a custom property with the :meth:`NodeObject.add_property`
-        function and embeds a :class:`PySide2.QtWidgets.QComboBox` widget
-        into the node.
-
-        Note:
-            The ``value_changed`` signal from the added node widget is wired
-            up to the :meth:`NodeObject.set_property` function.
-
-        Args:
-            name (str): name for the custom property.
-            label (str): label to be displayed.
-            items (list[str]): items to be added into the menu.
-            tooltip (str): widget tooltip.
-            tab (str): name of the widget tab to display in.
-        """
-        self.model.add_property(
-            name,
-            value=items[0] if items else None,
-            items=items or [],
-            widget_type=NodePropWidgetEnum.QCOMBO_BOX.value,
-            widget_tooltip=tooltip,
-            tab=tab,
-        )
-        widget = NodeComboBox(self.view, name, label, items)
-        widget.setToolTip(tooltip or "")
-        widget.value_changed.connect(self.set_property)
-        self.view.add_widget(widget)
-        #: redraw node to address calls outside the "__init__" func.
-        self.view.draw_node()
-
     def add_text_input(
         self, name, label="", text="", placeholder_text="", tooltip=None, tab=None
     ):
@@ -277,40 +242,6 @@ class BaseNode(NodeObject):
             tab=tab,
         )
         widget = NodeLineEdit(self.view, name, label, text, placeholder_text)
-        widget.setToolTip(tooltip or "")
-        widget.value_changed.connect(self.set_property)
-        self.view.add_widget(widget)
-        #: redraw node to address calls outside the "__init__" func.
-        self.view.draw_node()
-
-    def add_checkbox(
-        self, name, label="", text="", state=False, tooltip=None, tab=None
-    ):
-        """
-        Creates a custom property with the :meth:`NodeObject.add_property`
-        function and embeds a :class:`PySide2.QtWidgets.QCheckBox` widget
-        into the node.
-
-        Note:
-            The ``value_changed`` signal from the added node widget is wired
-            up to the :meth:`NodeObject.set_property` function.
-
-        Args:
-            name (str): name for the custom property.
-            label (str): label to be displayed.
-            text (str): checkbox text.
-            state (bool): pre-check.
-            tooltip (str): widget tooltip.
-            tab (str): name of the widget tab to display in.
-        """
-        self.model.add_property(
-            name,
-            value=state,
-            widget_type=NodePropWidgetEnum.QCHECK_BOX.value,
-            widget_tooltip=tooltip,
-            tab=tab,
-        )
-        widget = NodeCheckBox(self.view, name, label, text, state)
         widget.setToolTip(tooltip or "")
         widget.value_changed.connect(self.set_property)
         self.view.add_widget(widget)
@@ -366,7 +297,6 @@ class BaseNode(NodeObject):
         display_name=True,
         color=None,
         locked=False,
-        painter_func=None,
     ):
         """
         Add input :class:`Port` to node.
@@ -380,8 +310,6 @@ class BaseNode(NodeObject):
             display_name (bool): display the port name on the node.
             color (tuple): initial port color (r, g, b) ``0-255``.
             locked (bool): locked state see :meth:`Port.set_locked`
-            painter_func (function or None): custom function to override the drawing
-                of the port shape see example: :ref:`Creating Custom Shapes`
 
         Returns:
             NodeGraphQt.Port: the created port object.
@@ -390,8 +318,6 @@ class BaseNode(NodeObject):
             raise PortRegistrationError(f"port name '{name}' already registered.")
 
         port_args = [name, multi_input, display_name, locked]
-        if painter_func and callable(painter_func):
-            port_args.append(painter_func)
         view = self.view.add_input(*port_args)
 
         if color:
@@ -415,7 +341,6 @@ class BaseNode(NodeObject):
         display_name=True,
         color=None,
         locked=False,
-        painter_func=None,
     ):
         """
         Add output :class:`Port` to node.
@@ -429,8 +354,6 @@ class BaseNode(NodeObject):
             display_name (bool): display the port name on the node.
             color (tuple): initial port color (r, g, b) ``0-255``.
             locked (bool): locked state see :meth:`Port.set_locked`
-            painter_func (function or None): custom function to override the drawing
-                of the port shape see example: :ref:`Creating Custom Shapes`
 
         Returns:
             NodeGraphQt.Port: the created port object.
@@ -439,8 +362,6 @@ class BaseNode(NodeObject):
             raise PortRegistrationError(f"port name '{name}' already registered.")
 
         port_args = [name, multi_output, display_name, locked]
-        if painter_func and callable(painter_func):
-            port_args.append(painter_func)
         view = self.view.add_output(*port_args)
 
         if color:

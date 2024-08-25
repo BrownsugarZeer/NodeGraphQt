@@ -165,6 +165,9 @@ class NodeViewer(QtWidgets.QGraphicsView):
         self.accept_connection_types = None
         self.reject_connection_types = None
 
+        for pipe in self.all_pipes():
+            pipe.draw_path(pipe.input_port, pipe.output_port)
+
     def __repr__(self):
         return "<{}() object at {}>".format(self.__class__.__name__, hex(id(self)))
 
@@ -1457,26 +1460,6 @@ class NodeViewer(QtWidgets.QGraphicsView):
         rect = self._combined_rect(nodes)
         self._scene_range.translate(rect.center() - self._scene_range.center())
         self.setSceneRect(self._scene_range)
-
-    def get_pipe_layout(self):
-        """
-        Returns the pipe layout mode.
-
-        Returns:
-            int: pipe layout mode.
-        """
-        return self._pipe_layout
-
-    def set_pipe_layout(self, layout):
-        """
-        Sets the pipe layout mode and redraw all pipe items in the scene.
-
-        Args:
-            layout (int): pipe layout mode. (see the constants module)
-        """
-        self._pipe_layout = layout
-        for pipe in self.all_pipes():
-            pipe.draw_path(pipe.input_port, pipe.output_port)
 
     def get_layout_direction(self):
         """
