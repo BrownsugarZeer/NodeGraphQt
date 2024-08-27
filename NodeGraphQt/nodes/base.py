@@ -7,7 +7,7 @@ from NodeGraphQt.base.commands import (
     PropertyChangedCmd,
 )
 from NodeGraphQt.nodes.base_model import NodeObject
-from NodeGraphQt.ports.base_model import Port
+from NodeGraphQt.ports.base_model import PortModel
 from NodeGraphQt.constants import (
     NodePropWidgetEnum,
     PortTypeEnum,
@@ -324,14 +324,9 @@ class BaseNode(NodeObject):
             view.color = color
             view.border_color = [min([255, max([0, i + 80])]) for i in color]
 
-        port = Port(node=self, view=view)
-        port.dtype = PortTypeEnum.IN.value
-        port.name = name
-        port.display_name = display_name
-        port.multi_connection = multi_input
-        port.locked = locked
+        port = PortModel(node=self, view=view)
         self._inputs.append(port)
-        self.model.inputs[port.name] = port
+        self.model.inputs[port.view.name] = port
         return port
 
     def add_output(
@@ -368,14 +363,9 @@ class BaseNode(NodeObject):
             view.color = color
             view.border_color = [min([255, max([0, i + 80])]) for i in color]
 
-        port = Port(node=self, view=view)
-        port.dtype = PortTypeEnum.OUT.value
-        port.name = name
-        port.display_name = display_name
-        port.multi_connection = multi_output
-        port.locked = locked
+        port = PortModel(node=self, view=view)
         self._outputs.append(port)
-        self.model.outputs[port.name] = port
+        self.model.outputs[port.view.name] = port
         return port
 
     def get_input(self, port):
@@ -572,7 +562,8 @@ class BaseNode(NodeObject):
         Returns:
             dict: {<port_name>: <port_object>}
         """
-        return {p.name: p for p in self._inputs}
+        # TODO: type_hint: NodeGraphQt.PortModel
+        return {p.view.name: p for p in self._inputs}
 
     def input_ports(self):
         """
@@ -590,7 +581,8 @@ class BaseNode(NodeObject):
         Returns:
             dict: {<port_name>: <port_object>}
         """
-        return {p.name: p for p in self._outputs}
+        # TODO: type_hint: NodeGraphQt.PortModel
+        return {p.view.name: p for p in self._outputs}
 
     def output_ports(self):
         """

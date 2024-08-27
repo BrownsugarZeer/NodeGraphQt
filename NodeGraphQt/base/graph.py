@@ -16,7 +16,7 @@ from NodeGraphQt.base.factory import NodeFactory
 from NodeGraphQt.base.menu import NodeGraphMenu, NodesMenu
 from NodeGraphQt.base.model import NodeGraphModel
 from NodeGraphQt.nodes.base_model import NodeObject
-from NodeGraphQt.ports.base_model import Port
+from NodeGraphQt.ports.base_model import PortModel
 from NodeGraphQt.constants import (
     MIME_TYPE,
     URI_SCHEME,
@@ -86,14 +86,14 @@ class NodeGraph(QtCore.QObject):
     :parameters: :class:`NodeGraphQt.NodeObject`
     :emits: selected node
     """
-    port_connected = QtCore.Signal(Port, Port)
+    port_connected = QtCore.Signal(PortModel, PortModel)
     """
     Signal triggered when a node port has been connected.
 
     :parameters: :class:`NodeGraphQt.Port`, :class:`NodeGraphQt.Port`
     :emits: input port, output port
     """
-    port_disconnected = QtCore.Signal(Port, Port)
+    port_disconnected = QtCore.Signal(PortModel, PortModel)
     """
     Signal triggered when a node port has been disconnected.
 
@@ -1217,16 +1217,16 @@ class NodeGraph(QtCore.QObject):
         assert isinstance(node, NodeObject), "node must be a instance of a NodeObject."
 
         if push_undo:
-            # TODO: node.name() -> node.view.name
             self._undo_stack.beginMacro(f"delete node: '{node.view.name}'")
 
         if isinstance(node, BaseNode):
+            # TODO: type_hint: NodeGraphQt.PortModel
             for p in node.input_ports():
-                if p.locked:
+                if p.view.locked:
                     p.set_locked(False, connected_ports=False, push_undo=push_undo)
                 p.clear_connections(push_undo=push_undo)
             for p in node.output_ports():
-                if p.locked:
+                if p.view.locked:
                     p.set_locked(False, connected_ports=False, push_undo=push_undo)
                 p.clear_connections(push_undo=push_undo)
 
@@ -1256,12 +1256,13 @@ class NodeGraph(QtCore.QObject):
             self._undo_stack.beginMacro(f"delete node: '{node.view.name}'")
 
         if isinstance(node, BaseNode):
+            # TODO: type_hint: NodeGraphQt.PortModel
             for p in node.input_ports():
-                if p.locked:
+                if p.view.locked:
                     p.set_locked(False, connected_ports=False, push_undo=push_undo)
                 p.clear_connections(push_undo=push_undo)
             for p in node.output_ports():
-                if p.locked:
+                if p.view.locked:
                     p.set_locked(False, connected_ports=False, push_undo=push_undo)
                 p.clear_connections(push_undo=push_undo)
 
@@ -1286,17 +1287,19 @@ class NodeGraph(QtCore.QObject):
             self.delete_node(nodes[0], push_undo=push_undo)
             return
         node_ids = [n.id for n in nodes]
+
         if push_undo:
             self._undo_stack.beginMacro(f"deleted '{len(nodes)}' node(s)")
-        for node in nodes:
 
+        for node in nodes:
             if isinstance(node, BaseNode):
+                # TODO: type_hint: NodeGraphQt.PortModel
                 for p in node.input_ports():
-                    if p.locked:
+                    if p.view.locked:
                         p.set_locked(False, connected_ports=False, push_undo=push_undo)
                     p.clear_connections(push_undo=push_undo)
                 for p in node.output_ports():
-                    if p.locked:
+                    if p.view.locked:
                         p.set_locked(False, connected_ports=False, push_undo=push_undo)
                     p.clear_connections(push_undo=push_undo)
 
@@ -1328,7 +1331,8 @@ class NodeGraph(QtCore.QObject):
                 continue
 
             for port in node.input_ports() + node.output_ports():
-                if port.locked:
+                # TODO: type_hint: NodeGraphQt.PortModel
+                if port.view.locked:
                     locked_ports.append("{0.node.name}: {0.name}".format(port))
 
             base_nodes.append(node)
@@ -1496,12 +1500,13 @@ class NodeGraph(QtCore.QObject):
         nodes = self.all_nodes()
         for n in nodes:
             if isinstance(n, BaseNode):
+                # TODO: type_hint: NodeGraphQt.PortModel
                 for p in n.input_ports():
-                    if p.locked:
+                    if p.view.locked:
                         p.set_locked(False, connected_ports=False)
                     p.clear_connections()
                 for p in n.output_ports():
-                    if p.locked:
+                    if p.view.locked:
                         p.set_locked(False, connected_ports=False)
                     p.clear_connections()
         self._undo_stack.push(NodesRemovedCmd(self, nodes))
@@ -1653,7 +1658,7 @@ class NodeGraph(QtCore.QObject):
                 # can have multiple connections.
                 # important when duplicating nodes.
                 allow_connection = any(
-                    [not in_port.connected_ports, in_port.multi_connection]
+                    [not in_port.connected_ports, in_port.view.multi_connection]
                 )
                 if allow_connection:
                     self._undo_stack.push(
@@ -1834,12 +1839,13 @@ class NodeGraph(QtCore.QObject):
 
         for node in nodes:
             if isinstance(node, BaseNode):
+                # TODO: type_hint: NodeGraphQt.PortModel
                 for p in node.input_ports():
-                    if p.locked:
+                    if p.view.locked:
                         p.set_locked(False, connected_ports=False, push_undo=True)
                     p.clear_connections()
                 for p in node.output_ports():
-                    if p.locked:
+                    if p.view.locked:
                         p.set_locked(False, connected_ports=False, push_undo=True)
                     p.clear_connections()
 

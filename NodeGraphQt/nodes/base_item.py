@@ -1,4 +1,5 @@
 from collections import OrderedDict
+from typing import List
 
 from PySide6 import QtGui, QtCore, QtWidgets
 
@@ -245,6 +246,7 @@ class NodeItem(AbstractNodeItem):
         """
         active pipe color.
         """
+        # TODO: type_hint: NodeGraphQt.PortItem
         ports = self.inputs + self.outputs
         for port in ports:
             for pipe in port.connected_pipes:
@@ -254,6 +256,7 @@ class NodeItem(AbstractNodeItem):
         """
         Highlight pipe color.
         """
+        # TODO: type_hint: NodeGraphQt.PortItem
         ports = self.inputs + self.outputs
         for port in ports:
             for pipe in port.connected_pipes:
@@ -396,7 +399,7 @@ class NodeItem(AbstractNodeItem):
         y = rect.center().y() - (text_rect.height() / 2)
         self.text_item.setPos(x + h_offset, y + v_offset)
 
-    def align_label(self, h_offset=0.0, v_offset=0.0):
+    def align_layout(self, h_offset=0.0, v_offset=0.0):
         """
         Center node label text to the top of the node.
 
@@ -405,9 +408,13 @@ class NodeItem(AbstractNodeItem):
             h_offset (float): horizontal offset.
         """
         if self.layout_direction is LayoutDirectionEnum.HORIZONTAL.value:
-            self._align_label_horizontal(h_offset, v_offset)
+            self._align_label_horizontal(h_offset=0.0, v_offset=0.0)
+            self._align_widgets_horizontal(v_offset)
+            self._align_ports_horizontal(v_offset)
         elif self.layout_direction is LayoutDirectionEnum.VERTICAL.value:
-            self._align_label_vertical(h_offset, v_offset)
+            self._align_label_vertical(h_offset=6.0, v_offset=0.0)
+            self._align_ports_vertical(v_offset=0.0)
+            self._align_widgets_vertical(v_offset=0.0)
         else:
             raise RuntimeError("Node graph layout direction not valid!")
 
@@ -454,20 +461,6 @@ class NodeItem(AbstractNodeItem):
             widget.widget().setTitleAlign("center")
             widget.setPos(x, y)
             y += widget_rect.height()
-
-    def align_widgets(self, v_offset=0.0):
-        """
-        Align node widgets to the default center of the node.
-
-        Args:
-            v_offset (float): vertical offset.
-        """
-        if self.layout_direction is LayoutDirectionEnum.HORIZONTAL.value:
-            self._align_widgets_horizontal(v_offset)
-        elif self.layout_direction is LayoutDirectionEnum.VERTICAL.value:
-            self._align_widgets_vertical(v_offset)
-        else:
-            raise RuntimeError("Node graph layout direction not valid!")
 
     def _align_ports_horizontal(self, v_offset):
         txt_offset = PortEnum.CLICK_FALLOFF.value - 2
@@ -525,20 +518,6 @@ class NodeItem(AbstractNodeItem):
             output_y = self._height - outputs[0].boundingRect().height() / 2
             _align_ports(outputs, output_y)
 
-    def align_ports(self, v_offset=0.0):
-        """
-        Align input, output ports in the node layout.
-
-        Args:
-            v_offset (float): port vertical offset.
-        """
-        if self.layout_direction is LayoutDirectionEnum.HORIZONTAL.value:
-            self._align_ports_horizontal(v_offset)
-        elif self.layout_direction is LayoutDirectionEnum.VERTICAL.value:
-            self._align_ports_vertical(v_offset)
-        else:
-            raise RuntimeError("Node graph layout direction not valid!")
-
     def _draw_node_horizontal(self):
         height = self._text_item.boundingRect().height() + 4.0
 
@@ -559,13 +538,7 @@ class NodeItem(AbstractNodeItem):
 
         # --- set the initial node layout ---
         # (do all the graphic item layout offsets here)
-
-        # align label text
-        self.align_label()
-        # arrange input and output ports.
-        self.align_ports(v_offset=height)
-        # arrange node widgets
-        self.align_widgets(v_offset=height)
+        self.align_layout(v_offset=height)
 
         self.update()
 
@@ -585,13 +558,7 @@ class NodeItem(AbstractNodeItem):
 
         # --- setup node layout ---
         # (do all the graphic item layout offsets here)
-
-        # align label text
-        self.align_label(h_offset=6)
-        # arrange input and output ports.
-        self.align_ports()
-        # arrange node widgets
-        self.align_widgets()
+        self.align_layout()
 
         self.update()
 
@@ -655,7 +622,7 @@ class NodeItem(AbstractNodeItem):
         return self._text_item
 
     @property
-    def inputs(self):
+    def inputs(self) -> List[PortItem]:
         """
         Returns:
             list[PortItem]: input port graphic items.
@@ -663,14 +630,14 @@ class NodeItem(AbstractNodeItem):
         return list(self._input_items.keys())
 
     @property
-    def outputs(self):
+    def outputs(self) -> List[PortItem]:
         """
         Returns:
             list[PortItem]: output port graphic items.
         """
         return list(self._output_items.keys())
 
-    def _add_port(self, port):
+    def _add_port(self, port: PortItem) -> PortItem:
         """
         Adds a port qgraphics item into the node.
 
@@ -699,7 +666,7 @@ class NodeItem(AbstractNodeItem):
         multi_port=False,
         display_name=True,
         locked=False,
-    ):
+    ) -> PortItem:
         """
         Adds a port qgraphics item into the node with the "port_type" set as
         IN_PORT.
@@ -714,10 +681,10 @@ class NodeItem(AbstractNodeItem):
             PortItem: input port qgraphics item.
         """
         port = PortItem(self)
-        port.name = name
         port.port_type = PortTypeEnum.IN.value
-        port.multi_connection = multi_port
+        port.name = name
         port.display_name = display_name
+        port.multi_connection = multi_port
         port.locked = locked
         return self._add_port(port)
 
@@ -727,7 +694,7 @@ class NodeItem(AbstractNodeItem):
         multi_port=False,
         display_name=True,
         locked=False,
-    ):
+    ) -> PortItem:
         """
         Adds a port qgraphics item into the node with the "port_type" set as
         OUT_PORT.
@@ -749,40 +716,40 @@ class NodeItem(AbstractNodeItem):
         port.locked = locked
         return self._add_port(port)
 
-    def _delete_port(self, port, text):
+    def _delete_port(self, port_item: PortItem, text: QtWidgets.QGraphicsTextItem):
         """
         Removes port item and port text from node.
 
         Args:
-            port (PortItem): port object.
+            port_item (PortItem): port object.
             text (QtWidgets.QGraphicsTextItem): port text object.
         """
-        port.setParentItem(None)
+        port_item.setParentItem(None)
         text.setParentItem(None)
-        self.scene().removeItem(port)
+        self.scene().removeItem(port_item)
         self.scene().removeItem(text)
-        del port
+        del port_item
         del text
 
-    def delete_input(self, port):
+    def delete_input(self, port_item: PortItem):
         """
         Remove input port from node.
 
         Args:
             port (PortItem): port object.
         """
-        self._delete_port(port, self._input_items.pop(port))
+        self._delete_port(port_item, self._input_items.pop(port_item))
 
-    def delete_output(self, port):
+    def delete_output(self, port_item: PortItem):
         """
         Remove output port from node.
 
         Args:
-            port (PortItem): port object.
+            port_item (PortItem): port object.
         """
-        self._delete_port(port, self._output_items.pop(port))
+        self._delete_port(port_item, self._output_items.pop(port_item))
 
-    def get_input_text_item(self, port_item):
+    def get_input_text_item(self, port_item: PortItem) -> QtWidgets.QGraphicsTextItem:
         """
         Args:
             port_item (PortItem): port item.
@@ -792,7 +759,7 @@ class NodeItem(AbstractNodeItem):
         """
         return self._input_items[port_item]
 
-    def get_output_text_item(self, port_item):
+    def get_output_text_item(self, port_item: PortItem) -> QtWidgets.QGraphicsTextItem:
         """
         Args:
             port_item (PortItem): port item.

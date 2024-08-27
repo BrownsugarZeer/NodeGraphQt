@@ -103,8 +103,9 @@ class NodeGraphModel:
             accept_ptype (str): port type accept.
             accept_ntype (str):port node type to accept.
         """
-        port_name = port.name
-        port_type = port.dtype
+        # TODO: type_hint: NodeGraphQt.PortModel
+        port_name = port.view.name
+        port_type = port.view.port_type
         node_type = node.identifier
 
         node_ports = node._inputs + node._outputs
@@ -139,8 +140,9 @@ class NodeGraphModel:
             reject_ptype (str): port type to reject.
             reject_ntype (str): port node type to reject.
         """
-        port_name = port.name
-        port_type = port.dtype
+        # TODO: type_hint: NodeGraphQt.PortModel
+        port_name = port.view.name
+        port_type = port.view.port_type
         node_type = node.identifier
 
         node_ports = node._inputs + node._outputs

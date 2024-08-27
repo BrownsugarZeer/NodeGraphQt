@@ -82,9 +82,10 @@ class NodeVisibleCmd(QtGui.QUndoCommand):
         node_view.visible = visible
 
         # redraw the connected pipes in the scene.
+        # TODO: type_hint: NodeGraphQt.PortModel
         ports = node_view.inputs + node_view.outputs
         for port in ports:
-            for pipe in port.connected_pipes:
+            for pipe in port.view.connected_pipes:
                 pipe.update()
 
         # restore the node selected state.
@@ -244,7 +245,7 @@ class NodeInputConnectedCmd(QtGui.QUndoCommand):
 
     def __init__(self, src_port, trg_port):
         super().__init__()
-        if src_port.dtype == PortTypeEnum.IN.value:
+        if src_port.view.port_type == PortTypeEnum.IN.value:
             self.source = src_port
             self.target = trg_port
         else:
@@ -271,7 +272,8 @@ class NodeInputDisconnectedCmd(QtGui.QUndoCommand):
 
     def __init__(self, src_port, trg_port):
         super().__init__()
-        if src_port.dtype == PortTypeEnum.IN.value:
+        # TODO: type_hint: NodeGraphQt.PortModel
+        if src_port.view.port_type == PortTypeEnum.IN.value:
             self.source = src_port
             self.target = trg_port
         else:
@@ -312,20 +314,22 @@ class PortConnectedCmd(QtGui.QUndoCommand):
         port_names = src_model.connected_ports.get(trg_id)
         if port_names is []:
             del src_model.connected_ports[trg_id]
-        if port_names and self.target.name in port_names:
-            port_names.remove(self.target.name)
+        # TODO: type_hint: NodeGraphQt.PortModel
+        if port_names and self.target.view.name in port_names:
+            port_names.remove(self.target.view.name)
 
         port_names = trg_model.connected_ports.get(src_id)
         if port_names is []:
             del trg_model.connected_ports[src_id]
-        if port_names and self.source.name in port_names:
-            port_names.remove(self.source.name)
+        # TODO: type_hint: NodeGraphQt.PortModel
+        if port_names and self.source.view.name in port_names:
+            port_names.remove(self.source.view.name)
 
         self.source.view.disconnect_from(self.target.view)
 
         # emit "port_disconnected" signal from the parent graph.
         if self.emit_signal:
-            ports = {p.dtype: p for p in [self.source, self.target]}
+            ports = {p.view.port_type: p for p in [self.source, self.target]}
             graph = self.source.node.graph
             graph.port_disconnected.emit(
                 ports[PortTypeEnum.IN.value], ports[PortTypeEnum.OUT.value]
@@ -337,14 +341,16 @@ class PortConnectedCmd(QtGui.QUndoCommand):
         src_id = self.source.node.id
         trg_id = self.target.node.id
 
-        src_model.connected_ports[trg_id].append(self.target.name)
-        trg_model.connected_ports[src_id].append(self.source.name)
+        # TODO: type_hint: NodeGraphQt.PortModel
+        src_model.connected_ports[trg_id].append(self.target.view.name)
+        trg_model.connected_ports[src_id].append(self.source.view.name)
 
         self.source.view.connect_to(self.target.view)
 
         # emit "port_connected" signal from the parent graph.
+        # TODO: type_hint: NodeGraphQt.PortModel
         if self.emit_signal:
-            ports = {p.dtype: p for p in [self.source, self.target]}
+            ports = {p.view.port_type: p for p in [self.source, self.target]}
             graph = self.source.node.graph
             graph.port_connected.emit(
                 ports[PortTypeEnum.IN.value], ports[PortTypeEnum.OUT.value]
@@ -373,42 +379,46 @@ class PortDisconnectedCmd(QtGui.QUndoCommand):
         src_id = self.source.node.id
         trg_id = self.target.node.id
 
-        src_model.connected_ports[trg_id].append(self.target.name)
-        trg_model.connected_ports[src_id].append(self.source.name)
+        # TODO: type_hint: NodeGraphQt.PortModel
+        src_model.connected_ports[trg_id].append(self.target.view.name)
+        trg_model.connected_ports[src_id].append(self.source.view.name)
 
         self.source.view.connect_to(self.target.view)
 
         # emit "port_connected" signal from the parent graph.
         if self.emit_signal:
-            ports = {p.dtype: p for p in [self.source, self.target]}
+            ports = {p.view.port_type: p for p in [self.source, self.target]}
             graph = self.source.node.graph
             graph.port_connected.emit(
                 ports[PortTypeEnum.IN.value], ports[PortTypeEnum.OUT.value]
             )
 
     def redo(self):
-        src_model = self.source
-        trg_model = self.target
+        src_model = self.source  # TODO: type_hint: NodeGraphQt.PortModel
+        trg_model = self.target  # TODO: type_hint: NodeGraphQt.PortModel
         src_id = self.source.node.id
         trg_id = self.target.node.id
 
         port_names = src_model.connected_ports.get(trg_id)
         if port_names is []:
             del src_model.connected_ports[trg_id]
-        if port_names and self.target.name in port_names:
-            port_names.remove(self.target.name)
+        # TODO: type_hint: NodeGraphQt.PortModel
+        if port_names and self.target.view.name in port_names:
+            port_names.remove(self.target.view.name)
 
         port_names = trg_model.connected_ports.get(src_id)
         if port_names is []:
             del trg_model.connected_ports[src_id]
-        if port_names and self.source.name in port_names:
-            port_names.remove(self.source.name)
+        # TODO: type_hint: NodeGraphQt.PortModel
+        if port_names and self.source.view.name in port_names:
+            port_names.remove(self.source.view.name)
 
         self.source.view.disconnect_from(self.target.view)
 
         # emit "port_disconnected" signal from the parent graph.
         if self.emit_signal:
-            ports = {p.dtype: p for p in [self.source, self.target]}
+            # TODO: type_hint: NodeGraphQt.PortModel
+            ports = {p.view.port_type: p for p in [self.source, self.target]}
             graph = self.source.node.graph
             graph.port_disconnected.emit(
                 ports[PortTypeEnum.IN.value], ports[PortTypeEnum.OUT.value]
@@ -425,15 +435,14 @@ class PortLockedCmd(QtGui.QUndoCommand):
 
     def __init__(self, port):
         super().__init__()
-        self.setText(f"lock port '{port.name}'")
+        # TODO: type_hint: NodeGraphQt.PortModel
+        self.setText(f"lock port '{port.view.name}'")
         self.port = port
 
     def undo(self):
-        self.port.locked = False
         self.port.view.locked = False
 
     def redo(self):
-        self.port.locked = True
         self.port.view.locked = True
 
 
@@ -447,15 +456,13 @@ class PortUnlockedCmd(QtGui.QUndoCommand):
 
     def __init__(self, port):
         super().__init__()
-        self.setText(f"unlock port '{port.name}'")
+        self.setText(f"unlock port '{port.view.name}'")
         self.port = port
 
     def undo(self):
-        self.port.locked = True
         self.port.view.locked = True
 
     def redo(self):
-        self.port.locked = False
         self.port.view.locked = False
 
 
@@ -472,18 +479,18 @@ class PortVisibleCmd(QtGui.QUndoCommand):
         self.port = port
         self.visible = visible
         if visible:
-            self.setText(f"show port {self.port.name}")
+            self.setText(f"show port {self.port.view.name}")
         else:
-            self.setText(f"hide port {self.port.name}")
+            self.setText(f"hide port {self.port.view.name}")
 
     def set_visible(self, visible):
         self.port.visible = visible
         self.port.view.setVisible(visible)
         node_view = self.port.node.view
         text_item = None
-        if self.port.dtype == PortTypeEnum.IN.value:
+        if self.port.view.port_type == PortTypeEnum.IN.value:
             text_item = node_view.get_input_text_item(self.port.view)
-        elif self.port.dtype == PortTypeEnum.OUT.value:
+        elif self.port.view.port_type == PortTypeEnum.OUT.value:
             text_item = node_view.get_output_text_item(self.port.view)
         if text_item:
             text_item.setVisible(visible)
