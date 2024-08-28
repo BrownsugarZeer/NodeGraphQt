@@ -1077,7 +1077,6 @@ class NodeGraph(QtCore.QObject):
         selected=True,
         text_color=None,
         pos=None,
-        push_undo=True,
         temp_node_object=None,
     ):
         """
@@ -1092,7 +1091,6 @@ class NodeGraph(QtCore.QObject):
             selected (bool): set created node to be selected.
             text_color (tuple or str): text color ``(255, 255, 255)`` or ``"#FFFFFF"``.
             pos (list[int, int]): initial x, y position for the node (default: ``(0, 0)``).
-            push_undo (bool): register the command to the undo stack. (default: True)
 
         Returns:
             BaseNode: the created instance of the node.
@@ -1141,21 +1139,16 @@ class NodeGraph(QtCore.QObject):
         node.update()
 
         undo_cmd = NodeAddedCmd(self, node, pos=node.model.pos, emit_signal=True)
-        if push_undo:
-            undo_label = f"create node: '{node.NODE_NAME}'"
-            self._undo_stack.beginMacro(undo_label)
-            for n in self.selected_nodes:
-                n.set_property("selected", False, push_undo=True)
-            self._undo_stack.push(undo_cmd)
-            self._undo_stack.endMacro()
-        else:
-            for n in self.selected_nodes:
-                n.set_property("selected", False, push_undo=False)
-            undo_cmd.redo()
+        undo_label = f"create node: '{node.NODE_NAME}'"
+        self._undo_stack.beginMacro(undo_label)
+        for n in self.selected_nodes:
+            n.set_property("selected", False)
+        self._undo_stack.push(undo_cmd)
+        self._undo_stack.endMacro()
 
         return node
 
-    def add_node(self, node, pos=None, selected=True, push_undo=True):
+    def add_node(self, node, pos=None, selected=True):
         """
         Add a node into the node graph.
         unlike the :meth:`NodeGraph.create_node` function this will not
@@ -1165,7 +1158,6 @@ class NodeGraph(QtCore.QObject):
             node (NodeGraphQt.BaseNode): node object.
             pos (list[float]): node x,y position. (optional)
             selected (bool): node selected state. (optional)
-            push_undo (bool): register the command to the undo stack. (default: True)
         """
         assert isinstance(node, NodeObject), "node must be a Node instance."
 
@@ -1193,66 +1185,57 @@ class NodeGraph(QtCore.QObject):
         node.update()
 
         undo_cmd = NodeAddedCmd(self, node, pos=pos, emit_signal=False)
-        if push_undo:
-            # TODO: node.name() -> node.view.name
-            self._undo_stack.beginMacro(f"add node: '{node.view.name}'")
-            self._undo_stack.push(undo_cmd)
-            if selected:
-                # TODO: node.set_selected() -> node.view.selected
-                node.view.selected = True
-            self._undo_stack.endMacro()
-        else:
-            undo_cmd.redo()
 
-    def delete_node(self, node, push_undo=True):
+        # TODO: node.name() -> node.view.name
+        self._undo_stack.beginMacro(f"add node: '{node.view.name}'")
+        self._undo_stack.push(undo_cmd)
+        if selected:
+            # TODO: node.set_selected() -> node.view.selected
+            node.view.selected = True
+        self._undo_stack.endMacro()
+
+    def delete_node(self, node):
         """
         Remove the node from the node graph.
 
         Args:
             node (NodeGraphQt.BaseNode): node object.
-            push_undo (bool): register the command to the undo stack. (default: True)
         """
-        self.delete_nodes([node], push_undo=push_undo)
+        self.delete_nodes([node])
 
-    def delete_nodes(self, nodes, push_undo=True):
+    def delete_nodes(self, nodes):
         """
         Remove a list of specified nodes from the node graph.
 
         Args:
             nodes (list[NodeGraphQt.BaseNode]): list of node instances.
-            push_undo (bool): register the command to the undo stack. (default: True)
         """
         if not nodes:
             return
 
-        if push_undo:
-            self._undo_stack.beginMacro(f"deleted '{len(nodes)}' node(s)")
+        self._undo_stack.beginMacro(f"deleted '{len(nodes)}' node(s)")
 
         for node in nodes:
             if isinstance(node, BaseNode):
                 # TODO: type_hint: NodeGraphQt.PortModel
                 for p in node.input_ports() + node.output_ports():
                     if p.view.locked:
-                        p.set_locked(False, connected_ports=False, push_undo=push_undo)
-                    p.clear_connections(push_undo=push_undo)
+                        p.set_locked(False, connected_ports=False)
+                    p.clear_connections()
 
         undo_cmd = NodesRemovedCmd(self, nodes, emit_signal=True)
-        if push_undo:
-            self._undo_stack.push(undo_cmd)
-            self._undo_stack.endMacro()
-        else:
-            undo_cmd.redo()
+        self._undo_stack.push(undo_cmd)
+        self._undo_stack.endMacro()
 
         node_ids = [n.id for n in nodes]
         self.nodes_deleted.emit(node_ids)
 
-    def extract_nodes(self, nodes, push_undo=True, prompt_warning=True):
+    def extract_nodes(self, nodes, prompt_warning=True):
         """
         Extract select nodes from its connections.
 
         Args:
             nodes (list[NodeGraphQt.BaseNode]): list of node instances.
-            push_undo (bool): register the command to the undo stack. (default: True)
             prompt_warning (bool): prompt warning dialog box.
         """
         if not nodes:
@@ -1280,18 +1263,16 @@ class NodeGraph(QtCore.QObject):
                 self._viewer.message_dialog(message, "Can't Extract Nodes")
             return
 
-        if push_undo:
-            self._undo_stack.beginMacro(f"extracted '{len(nodes)}' node(s)")
+        self._undo_stack.beginMacro(f"extracted '{len(nodes)}' node(s)")
 
         for node in base_nodes:
             for port in node.input_ports() + node.output_ports():
                 for connected_port in port.get_connected_ports():
                     if connected_port.node in base_nodes:
                         continue
-                    port.disconnect_from(connected_port, push_undo=push_undo)
+                    port.disconnect_from(connected_port)
 
-        if push_undo:
-            self._undo_stack.endMacro()
+        self._undo_stack.endMacro()
 
     def all_nodes(self) -> List[BaseNode]:
         """
@@ -1764,7 +1745,7 @@ class NodeGraph(QtCore.QObject):
                 # TODO: type_hint: NodeGraphQt.PortModel
                 for p in node.input_ports() + node.output_ports():
                     if p.view.locked:
-                        p.set_locked(False, connected_ports=False, push_undo=True)
+                        p.set_locked(False, connected_ports=False)
                     p.clear_connections()
 
         self._undo_stack.push(NodesRemovedCmd(self, nodes))

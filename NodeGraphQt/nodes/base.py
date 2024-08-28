@@ -77,7 +77,7 @@ class BaseNode(NodeObject):
         for name, widget in self.view.widgets.items():
             self.model.set_property(name, widget.get_value())
 
-    def set_property(self, name, value, push_undo=True):
+    def set_property(self, name, value):
         """
         Set the value on the node custom property.
 
@@ -88,7 +88,6 @@ class BaseNode(NodeObject):
         Args:
             name (str): name of the property.
             value (object): property data (python built in types).
-            push_undo (bool): register the command to the undo stack. (default: True)
         """
         # prevent signals from causing an infinite loop.
         if self.model.get_property(name) is value:
@@ -97,10 +96,7 @@ class BaseNode(NodeObject):
         if name == "visible":
             if self.graph:
                 undo_cmd = NodeVisibleCmd(self, value)
-                if push_undo:
-                    self.graph.undo_stack().push(undo_cmd)
-                else:
-                    undo_cmd.redo()
+                self.graph.undo_stack().push(undo_cmd)
                 return
         elif name == "disabled":
             # redraw the connected pipes in the scene.
@@ -109,7 +105,6 @@ class BaseNode(NodeObject):
                 for pipe in port.connected_pipes:
                     pipe.update()
 
-        # super().set_property(name, value, push_undo)
         # prevent nodes from have the same name.
         if self.graph:
             if name == "name":
@@ -119,11 +114,8 @@ class BaseNode(NodeObject):
             undo_cmd = PropertyChangedCmd(self, name, value)
             if name == "name":
                 undo_cmd.setText(f"renamed '{self.view.name}' to '{value}'")
-            if push_undo:
-                undo_stack = self.graph.undo_stack()
-                undo_stack.push(undo_cmd)
-            else:
-                undo_cmd.redo()
+            undo_stack = self.graph.undo_stack()
+            undo_stack.push(undo_cmd)
 
         # redraw the node for custom properties.
         if self.model.is_custom_property(name):
@@ -248,13 +240,12 @@ class BaseNode(NodeObject):
         #: redraw node to address calls outside the "__init__" func.
         self.view.draw_node()
 
-    def hide_widget(self, name, push_undo=True):
+    def hide_widget(self, name):
         """
         Hide an embedded node widget.
 
         Args:
             name (str): node property name for the widget.
-            push_undo (bool): register the command to the undo stack. (default: True)
 
         See Also:
             :meth:`BaseNode.add_custom_widget`,
@@ -264,18 +255,14 @@ class BaseNode(NodeObject):
         if not self.view.has_widget(name):
             return
         undo_cmd = NodeWidgetVisibleCmd(self, name, visible=False)
-        if push_undo:
-            self.graph.undo_stack().push(undo_cmd)
-        else:
-            undo_cmd.redo()
+        self.graph.undo_stack().push(undo_cmd)
 
-    def show_widget(self, name, push_undo=True):
+    def show_widget(self, name):
         """
         Show an embedded node widget.
 
         Args:
             name (str): node property name for the widget.
-            push_undo (bool): register the command to the undo stack. (default: True)
 
         See Also:
             :meth:`BaseNode.add_custom_widget`,
@@ -285,10 +272,7 @@ class BaseNode(NodeObject):
         if not self.view.has_widget(name):
             return
         undo_cmd = NodeWidgetVisibleCmd(self, name, visible=True)
-        if push_undo:
-            self.graph.undo_stack().push(undo_cmd)
-        else:
-            undo_cmd.redo()
+        self.graph.undo_stack().push(undo_cmd)
 
     def add_input(
         self,
