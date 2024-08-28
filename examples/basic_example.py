@@ -43,11 +43,11 @@ def main():
 
     # create node with custom text color and disable it.
     n_basic_a = graph.create_node("nodes.basic.BasicNodeA", text_color="#feab20")
-    n_basic_a.set_disabled(True)
+    # n_basic_a.set_disabled(True)
 
     # create node and set a custom icon.
     n_basic_b = graph.create_node("nodes.basic.BasicNodeB", name="custom icon")
-    n_basic_b.set_icon(Path(BASE_PATH, "star.png"))
+    # n_basic_b.set_icon(Path(BASE_PATH, "star.png"))
 
     # create node with the custom port shapes.
     n_custom_ports = graph.create_node(
@@ -55,9 +55,7 @@ def main():
     )
 
     # create node with the embedded QLineEdit widget.
-    n_text_input = graph.create_node(
-        "nodes.widget.TextInputNode", name="text node", color="#0a1e20"
-    )
+    n_text_input = graph.create_node("nodes.widget.TextInputNode", name="text node")
 
     # create node with the embedded QCheckBox widgets.
     n_checkbox = graph.create_node("nodes.widget.CheckboxNode", name="checkbox node")
@@ -82,11 +80,6 @@ def main():
 
     # auto layout nodes.
     graph.auto_layout_nodes()
-
-    # crate a backdrop node and wrap it around
-    # "custom port node" and "group node".
-    n_backdrop = graph.create_node("Backdrop")
-    n_backdrop.wrap_nodes([n_custom_ports, n_combo_menu])
 
     # fit nodes to the viewer.
     graph.clear_selection()

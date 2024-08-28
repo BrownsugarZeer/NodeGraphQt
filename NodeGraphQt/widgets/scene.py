@@ -13,17 +13,9 @@ class NodeScene(QtWidgets.QGraphicsScene):
         self.setBackgroundBrush(QtGui.QColor(*self._bg_color))
 
     def __repr__(self):
-        cls_name = str(self.__class__.__name__)
-        return '<{}("{}") object at {}>'.format(cls_name, self.viewer(), hex(id(self)))
-
-    # def _draw_text(self, painter, pen):
-    #     font = QtGui.QFont()
-    #     font.setPixelSize(48)
-    #     painter.setFont(font)
-    #     parent = self.viewer()
-    #     pos = QtCore.QPoint(20, parent.height() - 20)
-    #     painter.setPen(pen)
-    #     painter.drawText(parent.mapToScene(pos), 'Not Editable')
+        msg = f"{self.__class__.__name__}('{self.viewer()}')"
+        msg = f"<{msg} object at {hex(id(self))}>"
+        return msg
 
     def _draw_grid(self, painter, rect, pen, grid_size):
         """
@@ -85,11 +77,9 @@ class NodeScene(QtWidgets.QGraphicsScene):
         pen.setWidth(grid_size / 10)
         painter.setPen(pen)
 
-        [
-            painter.drawPoint(int(x), int(y))
-            for x in range(first_left, right, grid_size)
-            for y in range(first_top, bottom, grid_size)
-        ]
+        for x in range(first_left, right, grid_size):
+            for y in range(first_top, bottom, grid_size):
+                painter.drawPoint(int(x), int(y))
 
     def drawBackground(self, painter, rect):
         super().drawBackground(painter, rect)

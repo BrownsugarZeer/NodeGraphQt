@@ -186,6 +186,7 @@ class NodeAddedCmd(QtGui.QUndoCommand):
             self.graph.nodes_deleted.emit([node_id])
 
     def redo(self):
+        # TODO: add the node
         self.graph.model.nodes[self.node.id] = self.node
         self.graph.viewer().add_node(self.node.view, self.pos)
 
@@ -217,6 +218,7 @@ class NodesRemovedCmd(QtGui.QUndoCommand):
 
     def undo(self):
         for node in self.nodes:
+            # TODO: add the node
             self.graph.model.nodes[node.id] = node
             self.graph.scene().addItem(node.view)
 

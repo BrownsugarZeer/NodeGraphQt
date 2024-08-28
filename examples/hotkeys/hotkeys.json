@@ -12,13 +12,6 @@
             },
             {
                 "type": "command",
-                "label": "Import...",
-                "file": "./hotkey_functions.py",
-                "function_name": "import_session",
-                "shortcut": ""
-            },
-            {
-                "type": "command",
                 "label": "Clear Session...",
                 "file": "./hotkey_functions.py",
                 "function_name": "clear_session",
@@ -105,33 +98,6 @@
                 "file": "./hotkey_functions.py",
                 "function_name": "select_all_nodes",
                 "shortcut": "Ctrl+A"
-            },
-            {
-                "type": "command",
-                "label": "Unselect All",
-                "file": "./hotkey_functions.py",
-                "function_name": "clear_node_selection",
-                "shortcut": "Ctrl+Shift+A"
-            },
-            {
-                "type": "command",
-                "label": "Invert Selection",
-                "file": "./hotkey_functions.py",
-                "function_name": "invert_node_selection"
-            },
-            {
-                "type": "command",
-                "label": "Enable/Disable",
-                "file": "./hotkey_functions.py",
-                "function_name": "disable_nodes",
-                "shortcut": "D"
-            },
-            {
-                "type": "command",
-                "label": "Duplicate",
-                "file": "./hotkey_functions.py",
-                "function_name": "duplicate_nodes",
-                "shortcut": "Alt+C"
             },
             {
                 "type": "command",
@@ -266,33 +232,6 @@
             },
             {
                 "type": "separator"
-            }
-        ]
-    },
-    {
-        "type": "menu",
-        "label": "&Pipes",
-        "items": [
-            {
-                "type": "command",
-                "label": "Curved",
-                "file": "./hotkey_functions.py",
-                "function_name": "curved_pipe",
-                "shortcut": "Ctrl+1"
-            },
-            {
-                "type": "command",
-                "label": "Straight",
-                "file": "./hotkey_functions.py",
-                "function_name": "straight_pipe",
-                "shortcut": "Ctrl+2"
-            },
-            {
-                "type": "command",
-                "label": "Angle",
-                "file": "./hotkey_functions.py",
-                "function_name": "angle_pipe",
-                "shortcut": "Ctrl+3"
             }
         ]
     }

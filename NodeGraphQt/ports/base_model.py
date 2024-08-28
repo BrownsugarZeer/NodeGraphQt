@@ -263,7 +263,7 @@ class PortModel(BaseModel):
             return
 
         if (
-            graph.acyclic()
+            graph.acyclic
             and viewer.acyclic_check(self.view, port.view)
             and pre_conn_port
         ):

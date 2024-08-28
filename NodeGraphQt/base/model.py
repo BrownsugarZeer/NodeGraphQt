@@ -22,7 +22,6 @@ class NodeGraphModel:
         self.pipe_collision = False
         self.pipe_slicing = True
         self.pipe_style = PipeLayoutEnum.CURVED.value
-        self.layout_direction = LayoutDirectionEnum.HORIZONTAL.value
 
     @property
     def common_properties(self):

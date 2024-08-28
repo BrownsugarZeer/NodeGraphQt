@@ -169,7 +169,9 @@ class NodeViewer(QtWidgets.QGraphicsView):
             pipe.draw_path(pipe.input_port, pipe.output_port)
 
     def __repr__(self):
-        return "<{}() object at {}>".format(self.__class__.__name__, hex(id(self)))
+        msg = f"{self.__class__.__name__}()"
+        msg = f"<{msg} object at {hex(id(self))}>"
+        return msg
 
     def focusInEvent(self, event):
         """
@@ -1388,9 +1390,9 @@ class NodeViewer(QtWidgets.QGraphicsView):
         node.post_init(self, pos)
 
     @staticmethod
-    def remove_node(node):
+    def delete_node(node):
         """
-        Remove node item from the scene.
+        Delete node item from the scene.
 
         Args:
             node (AbstractNodeItem): node item instance.

@@ -144,18 +144,9 @@ class NodeGraph(QtCore.QObject):
         self._undo_view = None
         self._undo_stack = QtGui.QUndoStack(self)
         self._widget = None
-        self._sub_graphs = {}
+
         self._viewer = NodeViewer(undo_stack=self._undo_stack)
-
-        layout_direction = kwargs.get("layout_direction")
-        if layout_direction:
-            if layout_direction not in [e.value for e in LayoutDirectionEnum]:
-                layout_direction = LayoutDirectionEnum.HORIZONTAL.value
-            self._model.layout_direction = layout_direction
-        else:
-            layout_direction = self._model.layout_direction
-        self._viewer.set_layout_direction(layout_direction)
-
+        self._viewer.set_layout_direction(LayoutDirectionEnum.HORIZONTAL.value)
         # viewer needs a reference to the model port connection constrains
         # for the user interaction with the live pipe.
         self._viewer.accept_connection_types = self._model.accept_connection_types
@@ -336,7 +327,7 @@ class NodeGraph(QtCore.QObject):
                         path = uri_search.group(1)
                         ext = uri_search.group(2)
                         try:
-                            self.import_session("{}{}".format(path, ext))
+                            self.import_session(f"{path}{ext}")
                         except Exception as e:
                             not_supported_urls.append(url)
 
@@ -804,7 +795,7 @@ class NodeGraph(QtCore.QObject):
         .. code-block:: python
 
             def run_test(graph):
-                print(graph.selected_nodes())
+                print(graph.selected_nodes)
 
 
         Args:
@@ -863,6 +854,7 @@ class NodeGraph(QtCore.QObject):
             menus[name].setDisabled(disabled)
             menus[name].setVisible(not disabled)
 
+    @property
     def acyclic(self):
         """
         Returns true if the current node graph is acyclic.
@@ -875,7 +867,8 @@ class NodeGraph(QtCore.QObject):
         """
         return self._model.acyclic
 
-    def set_acyclic(self, mode=True):
+    @acyclic.setter
+    def acyclic(self, mode: bool = True):
         """
         Enable the node graph to be a acyclic graph. (default: ``True``)
 
@@ -888,6 +881,7 @@ class NodeGraph(QtCore.QObject):
         self._model.acyclic = mode
         self._viewer.acyclic = self._model.acyclic
 
+    @property
     def pipe_collision(self):
         """
         Returns if pipe collision is enabled.
@@ -901,7 +895,8 @@ class NodeGraph(QtCore.QObject):
         """
         return self._model.pipe_collision
 
-    def set_pipe_collision(self, mode=True):
+    @pipe_collision.setter
+    def pipe_collision(self, mode: bool = True):
         """
         Enable/Disable pipe collision.
 
@@ -917,6 +912,7 @@ class NodeGraph(QtCore.QObject):
         self._model.pipe_collision = mode
         self._viewer.pipe_collision = self._model.pipe_collision
 
+    @property
     def pipe_slicing(self):
         """
         Returns if pipe slicing is enabled.
@@ -930,7 +926,8 @@ class NodeGraph(QtCore.QObject):
         """
         return self._model.pipe_slicing
 
-    def set_pipe_slicing(self, mode=True):
+    @pipe_slicing.setter
+    def pipe_slicing(self, mode: bool = True):
         """
         Enable/Disable pipe slicer.
 
@@ -962,6 +959,7 @@ class NodeGraph(QtCore.QObject):
         """
         return self._model.pipe_style
 
+    @property
     def layout_direction(self):
         """
         Return the current node graph layout direction.
@@ -974,9 +972,10 @@ class NodeGraph(QtCore.QObject):
         Returns:
             int: layout direction.
         """
-        return self._model.layout_direction
+        return self._viewer.get_layout_direction()
 
-    def set_layout_direction(self, direction):
+    @layout_direction.setter
+    def layout_direction(self, direction):
         """
         Sets the node graph layout direction to horizontal or vertical.
         This function will also override the layout direction on all
@@ -1005,7 +1004,6 @@ class NodeGraph(QtCore.QObject):
         direction_types = [e.value for e in LayoutDirectionEnum]
         if direction not in direction_types:
             direction = LayoutDirectionEnum.HORIZONTAL.value
-        self._model.layout_direction = direction
         for node in self.all_nodes():
             node.set_layout_direction(direction)
         self._viewer.set_layout_direction(direction)
@@ -1015,7 +1013,7 @@ class NodeGraph(QtCore.QObject):
         Sets the zoom level to fit selected nodes.
         If no nodes are selected then all nodes in the graph will be framed.
         """
-        nodes = self.selected_nodes() or self.all_nodes()
+        nodes = self.selected_nodes or self.all_nodes()
         if not nodes:
             return
         self._viewer.zoom_to_nodes([n.view for n in nodes])
@@ -1138,7 +1136,7 @@ class NodeGraph(QtCore.QObject):
             node.model.pos = [float(pos[0]), float(pos[1])]
 
         # initial node direction layout.
-        node.model.layout_direction = self.layout_direction()
+        node.model.layout_direction = self.layout_direction
 
         node.update()
 
@@ -1146,12 +1144,12 @@ class NodeGraph(QtCore.QObject):
         if push_undo:
             undo_label = f"create node: '{node.NODE_NAME}'"
             self._undo_stack.beginMacro(undo_label)
-            for n in self.selected_nodes():
+            for n in self.selected_nodes:
                 n.set_property("selected", False, push_undo=True)
             self._undo_stack.push(undo_cmd)
             self._undo_stack.endMacro()
         else:
-            for n in self.selected_nodes():
+            for n in self.selected_nodes:
                 n.set_property("selected", False, push_undo=False)
             undo_cmd.redo()
 
@@ -1189,7 +1187,7 @@ class NodeGraph(QtCore.QObject):
         node.model.name = node.NODE_NAME
 
         # initial node direction layout.
-        node.model.layout_direction = self.layout_direction()
+        node.model.layout_direction = self.layout_direction
 
         # update method must be called before it's been added to the viewer.
         node.update()
@@ -1214,64 +1212,7 @@ class NodeGraph(QtCore.QObject):
             node (NodeGraphQt.BaseNode): node object.
             push_undo (bool): register the command to the undo stack. (default: True)
         """
-        assert isinstance(node, NodeObject), "node must be a instance of a NodeObject."
-
-        if push_undo:
-            self._undo_stack.beginMacro(f"delete node: '{node.view.name}'")
-
-        if isinstance(node, BaseNode):
-            # TODO: type_hint: NodeGraphQt.PortModel
-            for p in node.input_ports():
-                if p.view.locked:
-                    p.set_locked(False, connected_ports=False, push_undo=push_undo)
-                p.clear_connections(push_undo=push_undo)
-            for p in node.output_ports():
-                if p.view.locked:
-                    p.set_locked(False, connected_ports=False, push_undo=push_undo)
-                p.clear_connections(push_undo=push_undo)
-
-        undo_cmd = NodesRemovedCmd(self, [node], emit_signal=True)
-        if push_undo:
-            self._undo_stack.push(undo_cmd)
-            self._undo_stack.endMacro()
-        else:
-            undo_cmd.redo()
-
-    def remove_node(self, node, push_undo=True):
-        """
-        Remove the node from the node graph.
-
-        unlike the :meth:`NodeGraph.delete_node` function this will not
-        trigger the :attr:`NodeGraph.nodes_deleted` signal.
-
-        Args:
-            node (NodeGraphQt.BaseNode): node object.
-            push_undo (bool): register the command to the undo stack. (default: True)
-
-        """
-        assert isinstance(node, NodeObject), "node must be a Node instance."
-
-        if push_undo:
-            # TODO: node.name() -> node.view.name
-            self._undo_stack.beginMacro(f"delete node: '{node.view.name}'")
-
-        if isinstance(node, BaseNode):
-            # TODO: type_hint: NodeGraphQt.PortModel
-            for p in node.input_ports():
-                if p.view.locked:
-                    p.set_locked(False, connected_ports=False, push_undo=push_undo)
-                p.clear_connections(push_undo=push_undo)
-            for p in node.output_ports():
-                if p.view.locked:
-                    p.set_locked(False, connected_ports=False, push_undo=push_undo)
-                p.clear_connections(push_undo=push_undo)
-
-        undo_cmd = NodesRemovedCmd(self, [node], emit_signal=False)
-        if push_undo:
-            self._undo_stack.push(undo_cmd)
-            self._undo_stack.endMacro()
-        else:
-            undo_cmd.redo()
+        self.delete_nodes([node], push_undo=push_undo)
 
     def delete_nodes(self, nodes, push_undo=True):
         """
@@ -1283,10 +1224,6 @@ class NodeGraph(QtCore.QObject):
         """
         if not nodes:
             return
-        if len(nodes) == 1:
-            self.delete_node(nodes[0], push_undo=push_undo)
-            return
-        node_ids = [n.id for n in nodes]
 
         if push_undo:
             self._undo_stack.beginMacro(f"deleted '{len(nodes)}' node(s)")
@@ -1294,11 +1231,7 @@ class NodeGraph(QtCore.QObject):
         for node in nodes:
             if isinstance(node, BaseNode):
                 # TODO: type_hint: NodeGraphQt.PortModel
-                for p in node.input_ports():
-                    if p.view.locked:
-                        p.set_locked(False, connected_ports=False, push_undo=push_undo)
-                    p.clear_connections(push_undo=push_undo)
-                for p in node.output_ports():
+                for p in node.input_ports() + node.output_ports():
                     if p.view.locked:
                         p.set_locked(False, connected_ports=False, push_undo=push_undo)
                     p.clear_connections(push_undo=push_undo)
@@ -1310,6 +1243,7 @@ class NodeGraph(QtCore.QObject):
         else:
             undo_cmd.redo()
 
+        node_ids = [n.id for n in nodes]
         self.nodes_deleted.emit(node_ids)
 
     def extract_nodes(self, nodes, push_undo=True, prompt_warning=True):
@@ -1368,6 +1302,7 @@ class NodeGraph(QtCore.QObject):
         """
         return list(self._model.nodes.values())
 
+    @property
     def selected_nodes(self):
         """
         Return all selected nodes that are in the node graph.
@@ -1399,19 +1334,6 @@ class NodeGraph(QtCore.QObject):
         for node in self.all_nodes():
             # TODO: node.set_selected() -> node.view.selected
             node.view.selected = False
-        self._undo_stack.endMacro()
-
-    def invert_selection(self):
-        """
-        Inverts the current node selection.
-        """
-        if not self.selected_nodes():
-            self.select_all()
-            return
-        self._undo_stack.beginMacro("invert selection")
-        for node in self.all_nodes():
-            # TODO: node.set_selected() -> node.view.selected
-            node.view.selected = not node.selected()
         self._undo_stack.endMacro()
 
     def get_node_by_id(self, node_id=None):
@@ -1528,10 +1450,10 @@ class NodeGraph(QtCore.QObject):
         nodes_data = {}
 
         # serialize graph session.
-        serial_data["graph"]["layout_direction"] = self.layout_direction()
-        serial_data["graph"]["acyclic"] = self.acyclic()
-        serial_data["graph"]["pipe_collision"] = self.pipe_collision()
-        serial_data["graph"]["pipe_slicing"] = self.pipe_slicing()
+        serial_data["graph"]["layout_direction"] = self.layout_direction
+        serial_data["graph"]["acyclic"] = self.acyclic
+        serial_data["graph"]["pipe_collision"] = self.pipe_collision
+        serial_data["graph"]["pipe_slicing"] = self.pipe_slicing
         serial_data["graph"]["pipe_style"] = self.pipe_style
 
         # connection constrains.
@@ -1596,13 +1518,13 @@ class NodeGraph(QtCore.QObject):
         # update node graph properties.
         for attr_name, attr_value in data.get("graph", {}).items():
             if attr_name == "layout_direction":
-                self.set_layout_direction(attr_value)
+                self.layout_direction = attr_value
             elif attr_name == "acyclic":
-                self.set_acyclic(attr_value)
+                self.acyclic = attr_value
             elif attr_name == "pipe_collision":
-                self.set_pipe_collision(attr_value)
+                self.pipe_collision = attr_value
             elif attr_name == "pipe_slicing":
-                self.set_pipe_slicing(attr_value)
+                self.pipe_slicing = attr_value
 
             # connection constrains.
             elif attr_name == "accept_connection_types":
@@ -1807,7 +1729,7 @@ class NodeGraph(QtCore.QObject):
             nodes (list[NodeGraphQt.BaseNode]):
                 list of nodes (default: selected nodes).
         """
-        nodes = nodes or self.selected_nodes()
+        nodes = nodes or self.selected_nodes
         if not nodes:
             return False
         clipboard = QtWidgets.QApplication.clipboard()
@@ -1833,18 +1755,14 @@ class NodeGraph(QtCore.QObject):
             nodes (list[NodeGraphQt.BaseNode]):
                 list of nodes (default: selected nodes).
         """
-        nodes = nodes or self.selected_nodes()
+        nodes = nodes or self.selected_nodes
         self.copy_nodes(nodes)
         self._undo_stack.beginMacro("cut nodes")
 
         for node in nodes:
             if isinstance(node, BaseNode):
                 # TODO: type_hint: NodeGraphQt.PortModel
-                for p in node.input_ports():
-                    if p.view.locked:
-                        p.set_locked(False, connected_ports=False, push_undo=True)
-                    p.clear_connections()
-                for p in node.output_ports():
+                for p in node.input_ports() + node.output_ports():
                     if p.view.locked:
                         p.set_locked(False, connected_ports=False, push_undo=True)
                     p.clear_connections()
@@ -1878,83 +1796,6 @@ class NodeGraph(QtCore.QObject):
             node.view.selected = True
         self._undo_stack.endMacro()
         return nodes
-
-    def duplicate_nodes(self, nodes):
-        """
-        Create duplicate copy from the list of nodes.
-
-        Args:
-            nodes (list[NodeGraphQt.BaseNode]): list of nodes.
-        Returns:
-            list[NodeGraphQt.BaseNode]: list of duplicated node instances.
-        """
-        if not nodes:
-            return
-
-        self._undo_stack.beginMacro("duplicate nodes")
-
-        self.clear_selection()
-        serial = self._serialize(nodes)
-        new_nodes = self._deserialize(serial)
-        offset = 50
-        for n in new_nodes:
-            # TODO: n.x_pos(), n.y_pos() -> n.view.xy_pos
-            # TODO: n.set_pos() -> n.view.set_xy_pos
-            x_pos, y_pos = n.view.xy_pos
-            n.view.set_xy_pos = (x_pos + offset, y_pos + offset)
-            n.set_property("selected", True)
-
-        self._undo_stack.endMacro()
-        return new_nodes
-
-    def disable_nodes(self, nodes, mode=None):
-        """
-        Toggle nodes to be either disabled or enabled state.
-
-        See Also:
-            :meth:`NodeObject.set_disabled`
-
-        Args:
-            nodes (list[NodeGraphQt.BaseNode]): list of nodes.
-            mode (bool): (optional) override state of the nodes.
-        """
-        if not nodes:
-            return
-
-        if len(nodes) == 1:
-            if mode is None:
-                mode = not nodes[0].disabled()
-            nodes[0].set_disabled(mode)
-            return
-
-        if mode is not None:
-            states = {False: "enable", True: "disable"}
-            text = f"{states[mode]} ({len(nodes)}) nodes"
-            self._undo_stack.beginMacro(text)
-            for n in nodes:
-                n.set_disabled(mode)
-            self._undo_stack.endMacro()
-            return
-
-        text = []
-        enabled_count = len([n for n in nodes if n.disabled()])
-        disabled_count = len([n for n in nodes if not n.disabled()])
-        if enabled_count > 0:
-            text.append(f"enabled ({enabled_count})")
-        if disabled_count > 0:
-            text.append(f"disabled ({disabled_count})")
-        text = " / ".join(text) + " nodes"
-
-        self._undo_stack.beginMacro(text)
-        for n in nodes:
-            n.set_disabled(not n.disabled())
-        self._undo_stack.endMacro()
-
-    def use_OpenGL(self):
-        """
-        Set the viewport to use QOpenGLWidget widget to draw the graph.
-        """
-        self._viewer.use_OpenGL()
 
     # auto layout node functions.
     # --------------------------------------------------------------------------
@@ -2201,16 +2042,6 @@ class NodeGraph(QtCore.QObject):
             bool: true is the node graph is root.
         """
         return True
-
-    @property
-    def sub_graphs(self):
-        """
-        Returns expanded group node sub graphs.
-
-        Returns:
-            dict: {<node_id>: <sub_graph>}
-        """
-        return self._sub_graphs
 
     # def graph_rect(self):
     #     """

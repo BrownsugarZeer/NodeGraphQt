@@ -32,14 +32,14 @@ def layout_h_mode(graph):
     """
     Set node graph layout direction to horizontal.
     """
-    graph.set_layout_direction(0)
+    graph.layout_direction = 0
 
 
 def layout_v_mode(graph):
     """
     Set node graph layout direction to vertical.
     """
-    graph.set_layout_direction(1)
+    graph.layout_direction = 1
 
 
 def open_session(graph):
@@ -52,16 +52,6 @@ def open_session(graph):
         graph.load_session(file_path)
 
 
-def import_session(graph):
-    """
-    Prompts a file open dialog to load a session.
-    """
-    current = graph.current_session()
-    file_path = graph.load_dialog(current)
-    if file_path:
-        graph.import_session(file_path)
-
-
 def save_session(graph):
     """
     Prompts a file save dialog to serialize a session if required.
@@ -69,7 +59,7 @@ def save_session(graph):
     current = graph.current_session()
     if current:
         graph.save_session(current)
-        msg = "Session layout saved:\n{}".format(current)
+        msg = f"Session layout saved:\n{current}"
         viewer = graph.viewer()
         viewer.message_dialog(msg, title="Session Saved")
     else:
@@ -138,14 +128,14 @@ def delete_nodes(graph):
     """
     Delete selected node.
     """
-    graph.delete_nodes(graph.selected_nodes())
+    graph.delete_nodes(graph.selected_nodes)
 
 
 def extract_nodes(graph):
     """
     Extract selected nodes.
     """
-    graph.extract_nodes(graph.selected_nodes())
+    graph.extract_nodes(graph.selected_nodes)
 
 
 def clear_node_connections(graph):
@@ -153,7 +143,7 @@ def clear_node_connections(graph):
     Clear port connection on selected nodes.
     """
     graph.undo_stack().beginMacro("clear selected node connections")
-    for node in graph.selected_nodes():
+    for node in graph.selected_nodes:
         for port in node.input_ports() + node.output_ports():
             port.clear_connections()
     graph.undo_stack().endMacro()
@@ -164,34 +154,6 @@ def select_all_nodes(graph):
     Select all nodes.
     """
     graph.select_all()
-
-
-def clear_node_selection(graph):
-    """
-    Clear node selection.
-    """
-    graph.clear_selection()
-
-
-def invert_node_selection(graph):
-    """
-    Invert node selection.
-    """
-    graph.invert_selection()
-
-
-def disable_nodes(graph):
-    """
-    Toggle disable on selected nodes.
-    """
-    graph.disable_nodes(graph.selected_nodes())
-
-
-def duplicate_nodes(graph):
-    """
-    Duplicated selected nodes.
-    """
-    graph.duplicate_nodes(graph.selected_nodes())
 
 
 def fit_to_selection(graph):
@@ -206,33 +168,6 @@ def show_undo_view(graph):
     Show the undo list widget.
     """
     graph.undo_view.show()
-
-
-def curved_pipe(graph):
-    """
-    Set node graph pipes layout as curved.
-    """
-    from NodeGraphQt.constants import PipeLayoutEnum
-
-    graph.set_pipe_style(PipeLayoutEnum.CURVED.value)
-
-
-def straight_pipe(graph):
-    """
-    Set node graph pipes layout as straight.
-    """
-    from NodeGraphQt.constants import PipeLayoutEnum
-
-    graph.set_pipe_style(PipeLayoutEnum.STRAIGHT.value)
-
-
-def angle_pipe(graph):
-    """
-    Set node graph pipes layout as angled.
-    """
-    from NodeGraphQt.constants import PipeLayoutEnum
-
-    graph.set_pipe_style(PipeLayoutEnum.ANGLE.value)
 
 
 def bg_grid_none(graph):
@@ -266,7 +201,7 @@ def layout_graph_down(graph):
     """
     Auto layout the nodes down stream.
     """
-    nodes = graph.selected_nodes() or graph.all_nodes()
+    nodes = graph.selected_nodes or graph.all_nodes()
     graph.auto_layout_nodes(nodes=nodes, down_stream=True)
 
 
@@ -274,7 +209,7 @@ def layout_graph_up(graph):
     """
     Auto layout the nodes up stream.
     """
-    nodes = graph.selected_nodes() or graph.all_nodes()
+    nodes = graph.selected_nodes or graph.all_nodes()
     graph.auto_layout_nodes(nodes=nodes, down_stream=False)
 
 
